@@ -1,0 +1,29 @@
+name: multihmr
+channels:
+  - defaults
+  - pytorch
+  - nvidia
+  - xformers
+  - conda-forge
+dependencies:
+  - python=3.9
+  - pytorch::pytorch=2.0.1
+  - pytorch::pytorch-cuda=11.7.0
+  - pip
+  - pip:
+    - roma
+    - pillow==10.0.1
+    - pyrender==0.1.45
+    - einops==0.6.1
+    - smplx
+    - pyvista==0.42.3
+    - numpy==1.22.4
+    - xformers==0.0.20
+    - tqdm==4.65.0
+    - trimesh==3.22.3
+    - pyglet==1.5.24
+    - gradio==4.13.0
+
+
+
+

@@ -1,0 +1,98 @@
+Multi-HMR, Copyright (c) 2024 Naver Corporation, is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 license.
+
+A summary of the CC BY-NC-SA 4.0 license is located here:
+	https://creativecommons.org/licenses/by-nc-sa/4.0/
+
+The CC BY-NC-SA 4.0 license is located here:
+	https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+
+	
+**************************************************************************
+SEE NOTICES BELOW CONCERNING SOFTWARE AND DATA:
+**************************************************************************
+
+----------------------------------------------------------------
+PART 1: NOTICES CONCERNING SOFTWARE FILES:
+----------------------------------------------------------------
+
+(A) NOTICE WITH RESPECT TO THE SOFTWARE: blocks/cross_attn_transformer.py
+
+This software is being redistributed in a modifiled form. The original form is available here:
+
+https://github.com/shubham-goel/4D-Humans/blob/a0def798c7eac811a63c8220fcc22d983b39785e/hmr2/models/components/t_cond_mlp.py
+https://github.com/shubham-goel/4D-Humans/blob/a0def798c7eac811a63c8220fcc22d983b39785e/hmr2/models/components/pose_transformer.py
+
+ORIGINAL COPYRIGHT NOTICE AND PERMISSION NOTICE AVAILABLE HERE IS REPRODUCE BELOW in Part 3 at [A]:
+
+https://github.com/shubham-goel/4D-Humans/blob/a0def798c7eac811a63c8220fcc22d983b39785e/LICENSE.md
+
+
+(B) NOTICE WITH RESPECT TO THE SOFTWARE: model.py
+
+This software is being redistributed in a modifiled form. The original form is available here:
+
+https://github.com/shubham-goel/4D-Humans/blob/a0def798c7eac811a63c8220fcc22d983b39785e/hmr2/models/components/pose_transformer.py
+https://github.com/shubham-goel/4D-Humans/blob/a0def798c7eac811a63c8220fcc22d983b39785e/hmr2/models/heads/smpl_head.py
+
+ORIGINAL COPYRIGHT NOTICE AND PERMISSION NOTICE AVAILABLE HERE IS REPRODUCE BELOW in Part 3 at [B]:
+
+https://github.com/shubham-goel/4D-Humans/blob/a0def798c7eac811a63c8220fcc22d983b39785e/LICENSE.md
+
+
+(C) NOTICE WITH RESPECT TO THE SOFTWARE: blocks/cross_attn_transformer.py
+
+This software is being redistributed in a modifiled form. The original form is available here:
+
+https://github.com/lucidrains/vit-pytorch
+
+ORIGINAL COPYRIGHT NOTICE AND PERMISSION NOTICE AVAILABLE HERE IS REPRODUCE BELOW in Part 3 at [C]:
+
+https://github.com/lucidrains/vit-pytorch/blob/main/LICENSE
+
+
+----------------------------------------------------------------
+PART 2: ORIGINAL COPYRIGHT NOTICE AND PERMISSION NOTICE:
+----------------------------------------------------------------
+
+NOTICE WITH RESPECT TO DATA IN THIS DIRECTORY: example_data
+jpg files available in the directory are made available subject to the license set forth therein.
+
+----------------------------------------------------------------
+PART 3: ORIGINAL COPYRIGHT NOTICE AND PERMISSION NOTICE:
+----------------------------------------------------------------
+
+[A] / [B] https://github.com/shubham-goel/4D-Humans/blob/a0def798c7eac811a63c8220fcc22d983b39785e/LICENSE.md
+
+MIT License
+
+Copyright (c) 2023 UC Regents, Shubham Goel
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+[C] https://github.com/lucidrains/vit-pytorch
+
+MIT License
+
+Copyright (c) 2020 Phil Wang
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

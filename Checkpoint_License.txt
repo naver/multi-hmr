@@ -1,0 +1,40 @@
+Multi-HMR Checkpoints, Copyright (c) 2024 Naver Corporation, are licensed under the Checkpoint License below.
+
+The following datasets, which are not being distributed with the Multi-HMR Checkpoints (hereinafter referred to as "Checkpoints"), were used to train one or more of the Checkpoints:
+
+(A) BEDLAM Dataset: see https://bedlam.is.tue.mpg.de
+made available under the following license: https://bedlam.is.tue.mpg.de/license.html
+Also see: Michael Black et al., "A Synthetic Dataset of Bodies Exhibiting Detailed Lifelike Animated Motion" in Proceedings IEEE/CVF Conf.~on Computer Vision and Pattern Recognition (CVPR), pp. 8726-8737, June 2023.
+
+(B) AGORA Dataset: see https://agora.is.tue.mpg.de/index.html
+made available under the following license: https://agora.is.tue.mpg.de/license.html
+Also see: Priyanka Patel et al, "{AGORA}: Avatars in Geography Optimized for Regression Analysis" in Proceedings IEEE/CVF Conf.~on Computer Vision and Pattern Recognition ({CVPR}), June 2021.
+
+(C) 3DPW Dataset: see https://virtualhumans.mpi-inf.mpg.de/3DPW/evaluation.html
+made available under the following license: https://virtualhumans.mpi-inf.mpg.de/3DPW/license.html
+Also see: von Marcard et al., "Recovering Accurate 3D Human Pose in The Wild Using IMUs and a Moving Camera" in European Conference on Computer Vision (ECCV), Sept. 2018.
+
+(D) UBody Dataset: see https://osx-ubody.github.io/
+made available under the following license: https://docs.google.com/document/d/1R-nn6qguO0YDkPKBleZ8NyrqGrjLXfJ7AQTTsATMYZc/edit
+Also see: Jing Lin et al., "One-Stage 3D Whole-Body Mesh Recovery with Component Aware Transformer" in CVPR 2023.
+
+
+----------------------------------------------------------------
+CHECKPOINT LICENSE WHICH ACCOUNT FOR DATASET LICENSES ABOVE:
+----------------------------------------------------------------
+
+LICENSE GRANT
+
+BY EXERCISING ANY RIGHTS TO THE CHECKPOINTS, YOU ACCEPT AND AGREE TO BE BOUND BY THE TERMS OF THIS LICENSE. TO THE EXTENT THIS LICENSE MAY BE CONSIDERED TO BE A CONTRACT, NAVER GRANTS YOU THE RIGHTS CONTAINED HERE IN CONSIDERATION OF YOUR ACCEPTANCE OF SUCH TERMS AND CONDITIONS. 
+
+Subject to the terms and conditions of this License, Naver hereby grants you a personal, revocable, royalty-free, non-exclusive, non-sublicensable, non-transferable license to use the Checkpoints subject to the following conditions:
+
+(1) PERMITTED USES:  You may use the Checkpoints (1) solely for the sole purpose of performing non-commercial scientific research, non-commercial education, or non-commercial artistic projects and (2) for no purpose that is excluded by any Dataset License under (A)-(D) above (“Purpose”).
+
+(2) COPYRIGHT: You will retain the above copyright notice and license along with the disclaimer below in all copies or substantial portions of the Checkpoints.
+
+(3) TERM: You agree the License automatically terminates without notice if you fail to comply with its terms, or you may terminate this License by ceasing to use the Checkpoints for the Purpose. Upon termination you agree to delete any and all copies of the Checkpoints. 
+
+ALL RIGHTS NOT EXPRESSLY GRANTED IN THIS LICENSE ARE RESERVED BY NAVER.
+
+THE CHECKPOINTS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL NAVER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE CHECKPOINTS OR THE USE OR OTHER DEALINGS IN THE CHECKPOINTS.
