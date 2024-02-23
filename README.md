@@ -17,7 +17,7 @@
   </p>
 
   <p align="center">
-  <a href="./"><img alt="arXiv" src="https://img.shields.io/badge/arXiv-xxxx.xxxxx-00ff00.svg"></a>
+  <a href="https://arxiv.org/abs/2402.14654"><img alt="arXiv" src="https://img.shields.io/badge/arXiv-xxxx.xxxxx-00ff00.svg"></a>
   <a href="https://europe.naverlabs.com/?p=9361171&preview=true"><img alt="Blogpost" src="https://img.shields.io/badge/Blogpost-up-yellow"></a>
   <a href="https://multihmr-demo.europe.naverlabs.com/"><img alt="Demo" src="https://img.shields.io/badge/Demo-up-blue"></a>
   <!-- <a href="./"><img alt="Hugging Face Spaces" src="https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Spaces-blue"></a> -->
