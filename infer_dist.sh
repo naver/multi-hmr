@@ -1,20 +1,30 @@
 #!/bin/bash
 
-for data_id in $(seq -w 062 062)
-do
-    if [ ! -d output_"${data_id}" ]; then
-        mkdir output_"${data_id}"
-    fi
+data_ids=("052" "055" "056" "059" "060" "061" "062")
+total_gpus=8
+i=0
 
-    for camera in front rear right left
-    do    
-        if [ ! -d output_"${data_id}"/camera_"${camera}" ]; then
-            mkdir output_"${data_id}"/camera_"${camera}"
+for data_id in "${data_ids[@]}"; do
+    for camera in front rear right left; do    
+        gpu_id=$((i % total_gpus)) 
+
+        if [ ! -d "output_${data_id}" ]; then
+            mkdir "output_${data_id}"
         fi
-        python demo.py --img_folder "/mnt/mnt_0/data/inhouse/ovon/training/topics/${data_id}/camera_${camera}" --out_folder "output_${data_id}/camera_${camera}" &
+
+        if [ ! -d "output_${data_id}/camera_${camera}" ]; then
+            mkdir "output_${data_id}/camera_${camera}"
+        fi
+
+        CUDA_VISIBLE_DEVICES=$gpu_id python demo.py --img_folder "/mnt/mnt_0/data/inhouse/ovon/training/topics/${data_id}/camera_${camera}" --out_folder "output/output_${data_id}/camera_${camera}" &
+
+        ((i++))
+        if (( i % (total_gpus * 4) == 0 )); then
+            wait
+        fi
     done
-    wait
-    echo "Processing batch ${data_id} done"
 done
+
+wait
 
 echo "All done"

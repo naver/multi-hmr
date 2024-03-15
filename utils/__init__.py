@@ -5,7 +5,7 @@ from .camera import (perspective_projection, get_focalLength_from_fieldOfView, i
 
 from .image import normalize_rgb, unpatch
 
-from .render import render_meshes, print_distance_on_image, render_side_views, create_scene
+from .render import render_meshes, print_distance_on_image, render_side_views, create_scene, get_single_foreground, get_distances
 
 from .tensor_manip import rebatch, pad, pad_to_max
 
