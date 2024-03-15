@@ -15,8 +15,10 @@ from PIL import Image, ImageOps
 import torch
 from tqdm import tqdm
 import time
+import cv2
 
-from utils import normalize_rgb, render_meshes, get_focalLength_from_fieldOfView, demo_color as color, print_distance_on_image, render_side_views, create_scene, MEAN_PARAMS, CACHE_DIR_MULTIHMR, SMPLX_DIR
+from config import *
+from utils import get_distances, normalize_rgb, render_meshes, get_focalLength_from_fieldOfView, demo_color as color, print_distance_on_image, render_side_views, create_scene, MEAN_PARAMS, CACHE_DIR_MULTIHMR, SMPLX_DIR, get_single_foreground
 from model import Model
 from pathlib import Path
 import warnings
@@ -137,15 +139,22 @@ def overlay_human_meshes(humans, K, model, img_pil, unique_color=False):
             alpha=1.0,
             color=_color)
 
-    return pred_rend_array, _color
+    foreground = get_single_foreground(np.asarray(img_pil), 
+            verts_list,
+            faces_list,
+            {'focal': focal, 'princpt': princpt},
+            alpha=1.0,
+            color=_color)
+
+    return pred_rend_array, _color, foreground
 
 if __name__ == "__main__":
         parser = ArgumentParser()
-        parser.add_argument("--model_name", type=str, default='multiHMR_896_L_synth')
-        parser.add_argument("--img_folder", type=str, default='example_data')
-        parser.add_argument("--out_folder", type=str, default='demo_out')
-        parser.add_argument("--save_mesh", type=int, default=0, choices=[0,1])
-        parser.add_argument("--extra_views", type=int, default=0, choices=[0,1])
+        parser.add_argument("--model_name", type=str, default='multiHMR_896_L')
+        parser.add_argument("--img_folder", type=str, default='data/camera_front')
+        parser.add_argument("--out_folder", type=str, default='output/camera_front')
+        parser.add_argument("--save_mesh", type=int, default=1, choices=[0,1])
+        parser.add_argument("--extra_views", type=int, default=1, choices=[0,1])
         parser.add_argument("--det_thresh", type=float, default=0.3)
         parser.add_argument("--nms_kernel_size", type=float, default=3)
         parser.add_argument("--fov", type=float, default=60)
@@ -183,6 +192,7 @@ if __name__ == "__main__":
         l_img_path = [file for file in os.listdir(args.img_folder) if file.endswith(suffixes) and file[0] != '.']
 
         # Loading
+
         model = load_model(args.model_name)
 
         # Model name for saving results.
@@ -194,7 +204,7 @@ if __name__ == "__main__":
         for i, img_path in enumerate(tqdm(l_img_path)):
                 
             # Path where the image + overlays of human meshes + optional views will be saved.
-            save_fn = os.path.join(args.out_folder, f"{Path(img_path).stem}_{model_name}.png")
+            save_fn = os.path.join(args.out_folder, f"{Path(img_path).stem}")
 
             # Get input in the right format for the model
             img_size = model.img_size
@@ -215,7 +225,30 @@ if __name__ == "__main__":
             # Superimpose predicted human meshes to the input image.
             img_array = np.asarray(img_pil_nopad)
             img_pil_visu= Image.fromarray(img_array)
-            pred_rend_array, _color = overlay_human_meshes(humans, K, model, img_pil_visu, unique_color=args.unique_color)
+            
+            pred_rend_array, _color, foreground = overlay_human_meshes(humans, K, model, img_pil_visu, unique_color=args.unique_color)
+            
+            # 得到距离，根据距离远近排序
+            distances = get_distances(humans)
+            distances_masks = list(zip(distances, foreground))
+            distances_masks.sort(key=lambda x: x[0])
+            for i, (dist, fg) in enumerate(distances_masks):
+                for j in range(i+1, len(distances_masks)):
+                    _, fg_next = distances_masks[j]
+                    # 计算当前掩码与后续掩码的交集
+                    intersection = np.logical_and(fg, fg_next)
+                    # 从后续掩码中移除交集部分
+                    distances_masks[j] = (distances_masks[j][0], np.where(intersection, 0, fg_next))
+            processed_fg_images = [mask for _, mask in distances_masks]
+
+            for i, fg_img in enumerate(processed_fg_images):
+                fg_save_path = os.path.join(args.out_folder,'masks',f"{Path(img_path).stem}")
+                if not os.path.exists(fg_save_path):
+                    os.makedirs(fg_save_path)
+                cv2.imwrite(os.path.join(fg_save_path, f"mask{i}.png"), fg_img)
+                print(f"save fg at {fg_save_path}")
+            # fg_img = (fg * 255).astype('uint8')
+            # cv2.imwrite('foreground_mask.png', fg_img)
 
             # Optionally add distance as an annotation to each mesh
             if args.distance:
@@ -240,8 +273,8 @@ if __name__ == "__main__":
                 _img = np.concatenate([img_array, pred_rend_array],1).astype(np.uint8)
 
             # Save to path.
-            Image.fromarray(_img).save(save_fn)
-            print(f"Avg Multi-HMR inference time={int(1000*np.median(np.asarray(l_duration[-1:])))}ms on a {torch.cuda.get_device_name()}")
+            # Image.fromarray(_img).save(save_fn+".png")
+            # print(f"Avg Multi-HMR inference time={int(1000*np.median(np.asarray(l_duration[-1:])))}ms on a {torch.cuda.get_device_name()}")
 
             # Saving mesh
             if args.save_mesh:
@@ -252,10 +285,10 @@ if __name__ == "__main__":
                 x = np.load(mesh_fn, allow_pickle=True)
 
                 # glb file
-                l_mesh = [humans[j]['verts_smplx'].detach().cpu().numpy() for j in range(len(humans))]
-                l_face = [model.smpl_layer['neutral'].bm_x.faces for j in range(len(humans))]
-                scene = create_scene(img_pil_visu, l_mesh, l_face, color=None, metallicFactor=0., roughnessFactor=0.5)
-                scene_fn = save_fn+'.glb'
-                scene.export(scene_fn)
+                # l_mesh = [humans[j]['verts_smplx'].detach().cpu().numpy() for j in range(len(humans))]
+                # l_face = [model.smpl_layer['neutral'].bm_x.faces for j in range(len(humans))]
+                # scene = create_scene(img_pil_visu, l_mesh, l_face, color=None, metallicFactor=0., roughnessFactor=0.5)
+                # scene_fn = save_fn+'.glb'
+                # scene.export(scene_fn)
 
         print('end')
