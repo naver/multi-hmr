@@ -4,4 +4,5 @@ models
 .multihmr
 ._.DS_Store
 .DS_Store
-tmp_data
+/*data
+/output

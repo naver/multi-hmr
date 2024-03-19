@@ -8,12 +8,12 @@ for data_id in "${data_ids[@]}"; do
     for camera in front rear right left; do    
         gpu_id=$((i % total_gpus)) 
 
-        if [ ! -d "output_${data_id}" ]; then
-            mkdir "output_${data_id}"
+        if [ ! -d "output/output_${data_id}" ]; then
+            mkdir "output/output_${data_id}"
         fi
 
-        if [ ! -d "output_${data_id}/camera_${camera}" ]; then
-            mkdir "output_${data_id}/camera_${camera}"
+        if [ ! -d "output/output_${data_id}/camera_${camera}" ]; then
+            mkdir "output/output_${data_id}/camera_${camera}"
         fi
 
         CUDA_VISIBLE_DEVICES=$gpu_id python demo.py --img_folder "/mnt/mnt_0/data/inhouse/ovon/training/topics/${data_id}/camera_${camera}" --out_folder "output/output_${data_id}/camera_${camera}" &
