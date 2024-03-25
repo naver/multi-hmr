@@ -6,3 +6,4 @@ models
 .DS_Store
 /*data*
 /*output*
+/[0-9]*
