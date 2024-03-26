@@ -172,6 +172,73 @@ def create_scene(img_pil, l_mesh, l_face, color=None, metallicFactor=0., roughne
 
     return scene
 
+def get_single_foreground(img, l_mesh, l_face, cam_param, color=None, alpha=1.0, 
+                  show_camera=False,
+                  intensity=3.0,
+                  metallicFactor=0., roughnessFactor=0.5, smooth=True,
+                  ):
+    
+    frontground = []
+    for i, mesh in enumerate(l_mesh):
+        scene = pyrender.Scene(ambient_light=(0.3, 0.3, 0.3))
+        if color is None:
+            _color = (np.random.choice(range(1,225))/255, np.random.choice(range(1,225))/255, np.random.choice(range(1,225))/255)
+        else:
+            if isinstance(color,list):
+                _color = color[i]
+            elif isinstance(color,tuple):
+                _color = color
+            else:
+                raise NotImplementedError
+        mesh = trimesh.Trimesh(mesh, l_face[i])
+        material = pyrender.MetallicRoughnessMaterial(
+            metallicFactor=metallicFactor,
+            roughnessFactor=roughnessFactor,
+            alphaMode='OPAQUE',
+            baseColorFactor=(_color[0], _color[1], _color[2], 1.0))
+        mesh = pyrender.Mesh.from_trimesh(mesh, material=material, smooth=smooth)
+        scene.add(mesh, f"mesh")
+        
+        focal, princpt = cam_param['focal'], cam_param['princpt']
+        camera_pose = np.eye(4)
+        if 'R' in cam_param.keys():
+            camera_pose[:3, :3] = cam_param['R']
+        if 't' in cam_param.keys():
+            camera_pose[:3, 3] = cam_param['t']
+        camera = pyrender.IntrinsicsCamera(fx=focal[0], fy=focal[1], cx=princpt[0], cy=princpt[1])
+        
+        # camera
+        camera_pose = OPENCV_TO_OPENGL_CAMERA_CONVENTION @ camera_pose
+        camera_pose = np.linalg.inv(camera_pose)
+        scene.add(camera, pose=camera_pose)
+    
+        # renderer
+        renderer = pyrender.OffscreenRenderer(viewport_width=img.shape[1], viewport_height=img.shape[0], point_size=1.0)
+    
+        # light
+        light = pyrender.DirectionalLight(intensity=intensity)
+        scene.add(light, pose=camera_pose)
+
+        # render
+        rgb, depth = renderer.render(scene, flags=pyrender.RenderFlags.RGBA)
+        rgb = rgb[:,:,:3].astype(np.float32)
+        fg = (depth > 0)[:,:,None].astype(np.float32)
+
+        bg_blending_radius = 1
+        bg_blending_kernel = 2.0 * torch.ones((1, 1, 2 * bg_blending_radius + 1, 2 * bg_blending_radius + 1)) / (2 * bg_blending_radius + 1) ** 2
+        bg_blending_bias =  -torch.ones(1)
+        
+        fg = fg.reshape((fg.shape[0],fg.shape[1]))
+        fg = torch.from_numpy(fg).unsqueeze(0)
+        fg = torch.clamp_min(torch.nn.functional.conv2d(fg, weight=bg_blending_kernel, bias=bg_blending_bias, padding=bg_blending_radius) * fg, 0.0)
+        fg = fg.permute(1,2,0).numpy()
+        fg_image = (fg * 255).astype('uint8')
+        frontground.append(fg_image)
+        renderer.delete()
+
+    return frontground
+
+
 def render_meshes(img, l_mesh, l_face, cam_param, color=None, alpha=1.0, 
                   show_camera=False,
                   intensity=3.0,
@@ -202,26 +269,7 @@ def render_meshes(img, l_mesh, l_face, cam_param, color=None, alpha=1.0,
             else:
                 raise NotImplementedError
         mesh = trimesh.Trimesh(mesh, l_face[i])
-        
-        # import ipdb
-        # ipdb.set_trace()
 
-        # mesh.visual = trimesh.visual.TextureVisuals(
-        #     uv=None, 
-        #     material=trimesh.visual.material.PBRMaterial(
-        #         metallicFactor=metallicFactor,
-        #     roughnessFactor=roughnessFactor,
-        #     alphaMode='OPAQUE',
-        #     baseColorFactor=(_color[0], _color[1], _color[2], 1.0)
-        #     ),
-        #     image=None, 
-        #     face_materials=None
-        # )
-        # print('saving')
-        # mesh.export('human.obj')
-        # mesh = trimesh.load('human.obj')
-        # print('loading')
-        # mesh = pyrender.Mesh.from_trimesh(mesh, smooth=smooth)
 
         material = pyrender.MetallicRoughnessMaterial(
             metallicFactor=metallicFactor,
@@ -230,9 +278,8 @@ def render_meshes(img, l_mesh, l_face, cam_param, color=None, alpha=1.0,
             baseColorFactor=(_color[0], _color[1], _color[2], 1.0))
         mesh = pyrender.Mesh.from_trimesh(mesh, material=material, smooth=smooth)
         scene.add(mesh, f"mesh_{i}")
+        
 
-    # Adding coordinate system at (0,0,2) for the moment
-    # Using lines defined in pyramid https://docs.pyvista.org/version/stable/api/utilities/_autosummary/pyvista.Pyramid.html
     if show_camera:
         import pyvista
 
@@ -361,6 +408,17 @@ def lookAt(eye, target, *args, **kwargs):
     viewMatrix = OPENCV_TO_OPENGL_CAMERA_CONVENTION @ viewMatrix
     
     return viewMatrix
+
+def get_distances(humans):
+    distances = []
+    for hum in humans:
+        # 提取平移参数
+        transl = hum['transl_pelvis'].cpu().numpy().reshape(3)
+        # 计算距离，忽略Y轴，只考虑X和Z轴
+        dist_cam = np.sqrt(((transl[[0,2]])**2).sum()) # 计算欧氏距离
+        distances.append(dist_cam)
+    
+    return distances
 
 def print_distance_on_image(pred_rend_array, humans, _color):
     # Add distance to the image.

@@ -1,7 +1,9 @@
-*__pycache__
+__pycache__
 demo_out
 models
 .multihmr
 ._.DS_Store
 .DS_Store
-tmp_data
+/*data*
+/*output*
+/[0-9]*

@@ -1,0 +1,1 @@
+root_dir = "/mnt/mnt_0/data/inhouse/ovon/training/topics"
