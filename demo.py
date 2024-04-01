@@ -151,8 +151,8 @@ def overlay_human_meshes(humans, K, model, img_pil, unique_color=False):
 if __name__ == "__main__":
         parser = ArgumentParser()
         parser.add_argument("--model_name", type=str, default='multiHMR_896_L')
-        parser.add_argument("--img_folder", type=str, default='data/camera_front')
-        parser.add_argument("--out_folder", type=str, default='output/camera_front')
+        parser.add_argument("--img_folder", type=str, default='example_data')
+        parser.add_argument("--out_folder", type=str, default='output/demo/')
         parser.add_argument("--save_mesh", type=int, default=1, choices=[0,1])
         parser.add_argument("--extra_views", type=int, default=1, choices=[0,1])
         parser.add_argument("--det_thresh", type=float, default=0.3)
