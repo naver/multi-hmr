@@ -24,6 +24,7 @@
   </p>
 
   <p align="left">
+  <a href="https://paperswithcode.com/sota/human-mesh-recovery-on-bedlam?p=multi-hmr-multi-person-whole-body-human-mesh"><img src="https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/multi-hmr-multi-person-whole-body-human-mesh/human-mesh-recovery-on-bedlam"></a><br>
   <a href="https://paperswithcode.com/sota/3d-human-reconstruction-on-ehf?p=multi-hmr-multi-person-whole-body-human-mesh"><img src="https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/multi-hmr-multi-person-whole-body-human-mesh/3d-human-reconstruction-on-ehf"></a><br>
   <a href="https://paperswithcode.com/sota/3d-human-pose-estimation-on-ubody?p=multi-hmr-multi-person-whole-body-human-mesh"><img src="https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/multi-hmr-multi-person-whole-body-human-mesh/3d-human-pose-estimation-on-ubody"></a><br>
   <a href="https://paperswithcode.com/sota/3d-multi-person-human-pose-estimation-on?p=multi-hmr-multi-person-whole-body-human-mesh"><img src="https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/multi-hmr-multi-person-whole-body-human-mesh/3d-multi-person-human-pose-estimation-on"></a><br>
