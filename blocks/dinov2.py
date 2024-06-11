@@ -6,10 +6,10 @@ import torch
 from torch import nn
 
 class Dinov2Backbone(nn.Module):
-    def __init__(self, name='dinov2_vitb14', *args, **kwargs):
+    def __init__(self, name='dinov2_vitb14', pretrained=False, *args, **kwargs):
         super().__init__()
         self.name = name
-        self.encoder = torch.hub.load('facebookresearch/dinov2', self.name, pretrained=False)
+        self.encoder = torch.hub.load('facebookresearch/dinov2', self.name, pretrained=pretrained)
         self.patch_size = self.encoder.patch_size
         self.embed_dim = self.encoder.embed_dim
 

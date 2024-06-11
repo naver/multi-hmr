@@ -76,7 +76,8 @@ def load_model(model_name, device=torch.device('cuda')):
             os.system(f"wget -O {ckpt_path} https://download.europe.naverlabs.com/ComputerVision/MultiHMR/{model_name}.pt")
             print(f"Ckpt downloaded to {ckpt_path}")
         except:
-            assert "Please contact fabien.baradel@naverlabs.com or open an issue on the github repo"
+            print("Please contact fabien.baradel@naverlabs.com or open an issue on the github repo")
+            return 0
 
     # Load weights
     print("Loading model")
@@ -126,8 +127,8 @@ def overlay_human_meshes(humans, K, model, img_pil, unique_color=False):
     princpt = np.asarray([K[0,0,-1].cpu().numpy(),K[0,1,-1].cpu().numpy()])
 
     # Get the vertices produced by the model.
-    verts_list = [humans[j]['verts_smplx'].cpu().numpy() for j in range(len(humans))]
-    faces_list = [model.smpl_layer['neutral'].bm_x.faces for j in range(len(humans))]
+    verts_list = [humans[j]['v3d'].cpu().numpy() for j in range(len(humans))]
+    faces_list = [model.smpl_layer['neutral_10'].bm_x.faces for j in range(len(humans))]
 
     # Render the meshes onto the image.
     pred_rend_array = render_meshes(np.asarray(img_pil), 
@@ -246,14 +247,14 @@ if __name__ == "__main__":
             # Saving mesh
             if args.save_mesh:
                 # npy file
-                l_mesh = [hum['verts_smplx'].cpu().numpy() for hum in humans]
+                l_mesh = [hum['v3d'].cpu().numpy() for hum in humans]
                 mesh_fn = save_fn+'.npy'
                 np.save(mesh_fn, np.asarray(l_mesh), allow_pickle=True)
                 x = np.load(mesh_fn, allow_pickle=True)
 
                 # glb file
-                l_mesh = [humans[j]['verts_smplx'].detach().cpu().numpy() for j in range(len(humans))]
-                l_face = [model.smpl_layer['neutral'].bm_x.faces for j in range(len(humans))]
+                l_mesh = [humans[j]['v3d'].detach().cpu().numpy() for j in range(len(humans))]
+                l_face = [model.smpl_layer['neutral_10'].bm_x.faces for j in range(len(humans))]
                 scene = create_scene(img_pil_visu, l_mesh, l_face, color=None, metallicFactor=0., roughnessFactor=0.5)
                 scene_fn = save_fn+'.glb'
                 scene.export(scene_fn)

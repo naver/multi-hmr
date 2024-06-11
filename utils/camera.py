@@ -59,6 +59,15 @@ def get_focalLength_from_fieldOfView(fov=60, img_size=512):
     focal = img_size / (2 * np.tan(np.radians(fov) /2))
     return focal
 
+def focal_length_normalization(x, f, fovn=60, img_size=448):
+    """
+    Section 3.1 of https://arxiv.org/pdf/1904.02028.pdf
+    E = (fn/f) * E' where E is 1/d
+    """
+    fn = get_focalLength_from_fieldOfView(fov=fovn, img_size=img_size)
+    y = x * (fn/f)
+    return y
+
 def undo_focal_length_normalization(y, f, fovn=60, img_size=448):
     """
     Undo focal_length_normalization()
@@ -67,9 +76,15 @@ def undo_focal_length_normalization(y, f, fovn=60, img_size=448):
     x = y * (f/fn)
     return x
 
-def undo_log_depth(y):
+EPS_LOG = 1e-10
+def log_depth(x, eps=EPS_LOG):
+    """
+    Move depth to log space
+    """
+    return torch.log(x + eps)
+
+def undo_log_depth(y, eps=EPS_LOG):
     """
     Undo log_depth()
     """
-    return torch.exp(y)
-
+    return torch.exp(y) - eps

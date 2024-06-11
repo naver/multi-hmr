@@ -14,3 +14,12 @@ xformers==0.0.20
 # for huggingface
 gradio==4.18.0
 spaces==0.19.4
+
+# for training/validation
+tensorboard==2.16.2
+
+# for ehf
+plyfile==1.0.3
+
+# for smpl
+chumpy==0.70

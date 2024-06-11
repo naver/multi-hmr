@@ -412,8 +412,8 @@ def render_side_views(img_array, _color, humans, model, K):
     princpt = np.asarray([K[0,0,-1].cpu().numpy(),K[0,1,-1].cpu().numpy()])
 
     # Get the vertices produced by the model.
-    l_verts = [humans[j]['verts_smplx'].cpu().numpy() for j in range(len(humans))]
-    l_faces = [model.smpl_layer['neutral'].bm_x.faces for j in range(len(humans))]
+    l_verts = [humans[j]['v3d'].cpu().numpy() for j in range(len(humans))]
+    l_faces = [model.smpl_layer['neutral_10'].bm_x.faces for j in range(len(humans))]
 
     bg_array = 1 + 0.*img_array.copy()
     if len(humans) == 0:

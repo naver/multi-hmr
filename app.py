@@ -146,8 +146,8 @@ def infer(fn, det_thresh, nms_kernel_size, fov):
 
         # Save into glb
         start = time.time()
-        l_mesh = [humans[j]['verts_smplx'].detach().cpu().numpy() for j in range(len(humans))]
-        l_face = [model.smpl_layer['neutral'].bm_x.faces for j in range(len(humans))]
+        l_mesh = [humans[j]['v3d'].detach().cpu().numpy() for j in range(len(humans))]
+        l_face = [model.smpl_layer['neutral_10'].bm_x.faces for j in range(len(humans))]
         scene = create_scene(img_pil_visu, l_mesh, l_face, color=color, metallicFactor=0., roughnessFactor=0.5)
         scene.export(glb_fn)
         print(f"Exporting scene in glb: {time.time() - start:.2f}sec")

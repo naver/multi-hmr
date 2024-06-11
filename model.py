@@ -21,6 +21,7 @@ class Model(nn.Module):
 
     def __init__(self,
             backbone='dinov2_vitb14',
+            pretrained_backbone=False,
             img_size=896,
             camera_embedding='geometric', # geometric encodes viewing directions with fourrier encoding
             camera_embedding_num_bands=16, # increase the size of the camera embedding
@@ -31,6 +32,7 @@ class Model(nn.Module):
             dict_smpl_layer=None,
             person_center='head',
             clip_dist=True,
+            num_betas=10,
             *args, **kwargs):
         super().__init__()
 
@@ -40,9 +42,10 @@ class Model(nn.Module):
         self.clip_dist = clip_dist,
         self.xat_depth = xat_depth
         self.xat_num_heads = xat_num_heads
+        self.num_betas = num_betas
 
         # Setup backbone
-        self.backbone = Dinov2Backbone(backbone)
+        self.backbone = Dinov2Backbone(backbone, pretrained=pretrained_backbone)
         self.embed_dim = self.backbone.embed_dim
         self.patch_size = self.backbone.patch_size
         assert self.img_size % self.patch_size == 0, "Invalid img size"
@@ -64,19 +67,19 @@ class Model(nn.Module):
         
         # Heads - Human properties
         self.mlp_offset = regression_mlp([self.embed_dim, self.embed_dim, 2]) # offset
-        
-        # Dense vetcor idx
-        self.nrot = 53
-        self.idx_score, self.idx_offset, self.idx_dist = [0], [1,2], [3]
-        self.idx_pose = list(range(4,4+self.nrot*9))
-        self.idx_shape = list(range(4+self.nrot*9,4+self.nrot*9+11))
-        self.idx_expr = list(range(4+self.nrot*9+11,4+self.nrot*9+11+10))
 
         # SMPL Layers
-        dict_smpl_layer = {'neutral': {10: SMPL_Layer(type='smplx', gender='neutral', num_betas=10, kid=False, person_center=person_center)}}
+        self.nrot = 53
+        dict_smpl_layer = {
+            'neutral': {
+                10: SMPL_Layer(type='smplx', gender='neutral', num_betas=10, kid=False, person_center=person_center),
+                11: SMPL_Layer(type='smplx', gender='neutral', num_betas=11, kid=False, person_center=person_center),
+                }
+            }
         _moduleDict = []
         for k, _smpl_layer in dict_smpl_layer.items():
-            _moduleDict.append([k, copy.deepcopy(_smpl_layer[10])])
+            for x, y in _smpl_layer.items():
+                _moduleDict.append([f"{k}_{x}", copy.deepcopy(y)])
         self.smpl_layer = nn.ModuleDict(_moduleDict)
 
         self.x_attention_head = HPH(
@@ -89,20 +92,25 @@ class Model(nn.Module):
             dim_head=32,
             dropout=0.0,
             emb_dropout=0.0,
-            at_token_res=self.img_size // self.patch_size)
+            at_token_res=self.img_size // self.patch_size,
+            num_betas=self.num_betas,
+            )
     
-    def detection(self, z, nms_kernel_size, det_thresh, N):
+    def detection(self, z, nms_kernel_size, det_thresh, N, idx=None, is_training=False):
         """ Detection score on the entire low res image """
         scores = _sigmoid(self.mlp_classif(z)) # per token detection score.
         # Restore Height and Width dimensions.
         scores = unpatch(scores, patch_size=1, c=scores.shape[2], img_size=int(np.sqrt(N)))  
 
-        if nms_kernel_size > 1: # Easy nms: supress adjacent high scores with max pooling.
-            scores = _nms(scores, kernel=nms_kernel_size)
-        _scores = torch.permute(scores, (0, 2, 3, 1))
+        if not is_training:
+            if nms_kernel_size > 1: # Easy nms: supress adjacent high scores with max pooling.
+                scores = _nms(scores, kernel=nms_kernel_size)
+            _scores = torch.permute(scores, (0, 2, 3, 1))
 
-        # Binary decision (keep confident detections)
-        idx = apply_threshold(det_thresh, _scores)
+            # Binary decision (keep confident detections)
+            idx = apply_threshold(det_thresh, _scores)
+        else:
+            assert idx is not None # training time
 
         # Scores  
         scores_detected = scores[idx[0], idx[3], idx[1],idx[2]] # scores of the detected humans only
@@ -142,9 +150,10 @@ class Model(nn.Module):
     def forward(self,
                 x,
                 idx=None,
-                det_thresh=0.5,
+                det_thresh=0.3,
                 nms_kernel_size=3,
                 K=None,
+                is_training=False,
                 *args,
                 **kwargs):
         """
@@ -164,8 +173,9 @@ class Model(nn.Module):
         B,N,C = z.size() # [bs,256,768]
 
         # Detection
-        scores, scores_det, idx = self.detection(z, nms_kernel_size=nms_kernel_size, det_thresh=det_thresh, N=N)
-        if len(idx[0]) == 0:
+        scores, scores_det, idx = self.detection(z, nms_kernel_size=nms_kernel_size, det_thresh=det_thresh, N=N,
+                                                 idx=idx, is_training=is_training)
+        if len(idx[0]) == 0 and not is_training:
             # no humans detected in the frame
             return persons
 
@@ -207,35 +217,45 @@ class Model(nn.Module):
         dist = self.to_euclidean_dist(x, dist, K_det)
 
         # Populate output dictionnary 
-        out.update({'scores': scores, 'offset': offset, 'dist': dist, 'expression': expression,
-                    'rotmat': rotmat, 'shape': shape, 'rotvec': rotvec, 'loc': loc})
+        out.update({'scores': scores, 
+                    'offset': offset, 
+                    'dist': dist, 
+                    'expression': expression,
+                    'rotmat': rotmat, 
+                    'shape': shape, 
+                    'rotvec': rotvec, 
+                    'loc': loc})
 
         assert rotvec.shape[0] == shape.shape[0] == loc.shape[0] == dist.shape[0], "Incoherent shapes"
         
         # Neutral
-        smpl_out = self.smpl_layer['neutral'](rotvec, shape, loc, dist, None, K=K_det, expression=expression)
+        smpl_out = self.smpl_layer[f"neutral_{self.num_betas}"](rotvec, shape, loc, dist, None, K=K_det, expression=expression)
         out.update(smpl_out)
 
-        # Populate a dictionnary for each person
-        for i in range(idx[0].shape[0]):
-            person = {
-                # Detection
-                'scores': scores_det[i], # detection scores
-                'loc': out['loc'][i], # 2d pixel location of the primary keypoints
-                # SMPL-X params
-                'transl': out['transl'][i], # from the primary keypoint i.e. the head
-                'transl_pelvis': out['transl_pelvis'][i], # of the pelvis joint
-                'rotvec': out['rotvec'][i],
-                'expression': out['expression'][i],
-                'shape': out['shape'][i],
-                # SMPL-X meshs
-                'verts_smplx': out['verts_smplx_cam'][i],
-                'j3d_smplx': out['j3d'][i],
-                'j2d_smplx': out['j2d'][i],
-            }
-            persons.append(person)
+        # Return
+        if is_training:
+            return out
+        else:
+            # Populate a dictionnary for each person
+            for i in range(idx[0].shape[0]):
+                person = {
+                    # Detection
+                    'scores': scores_det[i], # detection scores
+                    'loc': out['loc'][i], # 2d pixel location of the primary keypoints
+                    # SMPL-X params
+                    'transl': out['transl'][i], # from the primary keypoint i.e. the head
+                    'transl_pelvis': out['transl_pelvis'][i], # of the pelvis joint
+                    'rotvec': out['rotvec'][i],
+                    'expression': out['expression'][i],
+                    'shape': out['shape'][i],
+                    # SMPL-X meshs
+                    'v3d': out['v3d'][i],
+                    'j3d': out['j3d'][i],
+                    'j2d': out['j2d'][i],
+                }
+                persons.append(person)
 
-        return persons
+            return persons
 
 class HPH(nn.Module):
     """ Cross-attention based SMPL Transformer decoder
@@ -256,6 +276,7 @@ class HPH(nn.Module):
                  dropout=0.0,
                  emb_dropout=0.0,
                  at_token_res=32,
+                 num_betas=10,
                  ):
         super().__init__()
 
@@ -271,12 +292,14 @@ class HPH(nn.Module):
         self.res = at_token_res
         self.input_is_mean_shape = True
         _context_dim = context_dim # for the central features
+        self.num_betas = num_betas
+        assert num_betas in [10, 11]
 
         # Transformer Decoder setup.
         # Based on https://github.com/shubham-goel/4D-Humans/blob/8830bb330558eea2395b7f57088ef0aae7f8fa22/hmr2/configs_hydra/experiment/hmr_vit_transformer.yaml#L35
         transformer_args = dict(
             num_tokens=1,
-            token_dim=(npose + 10 + 3 + _context_dim) if self.input_is_mean_shape else 1,
+            token_dim=(npose + self.num_betas + 3 + _context_dim) if self.input_is_mean_shape else 1,
             dim=dim,
             depth=depth,
             heads=heads,
@@ -291,7 +314,7 @@ class HPH(nn.Module):
         dim = transformer_args['dim']
 
         # Final decoders to regress targets 
-        self.decpose, self.decshape, self.deccam, self.decexpression = [nn.Linear(dim, od) for od in [npose, 10, 3, 10]]
+        self.decpose, self.decshape, self.deccam, self.decexpression = [nn.Linear(dim, od) for od in [npose, num_betas, 3, 10]]
 
         # Register bufffers for the smpl layer.
         self.set_smpl_init()
@@ -327,6 +350,9 @@ class HPH(nn.Module):
         init_cam = torch.from_numpy(mean_params['cam'].astype(np.float32)).unsqueeze(0)
         init_betas_kid = torch.cat([init_betas, torch.zeros_like(init_betas[:,[0]])],1)
         init_expression = 0. * torch.from_numpy(mean_params['shape'].astype('float32')).unsqueeze(0)
+
+        if self.num_betas == 11:
+            init_betas = torch.cat([init_betas, torch.zeros_like(init_betas[:,:1])], 1)
 
         self.register_buffer('init_body_pose', init_body_pose)
         self.register_buffer('init_betas', init_betas)

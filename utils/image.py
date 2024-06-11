@@ -23,6 +23,19 @@ def normalize_rgb(img, imagenet_normalization=True):
     img = img.astype(np.float32)
     return img
 
+def denormalize_rgb(img, imagenet_normalization=True):
+    """
+    Args:
+        - img: np.array - (3,W,H) - np.float - -3/3
+    Return:
+        - img: np.array - (W,H,3) - np.uint8 - 0/255
+    """
+    if imagenet_normalization:
+        img = (img * np.asarray(IMG_NORM_STD).reshape(3,1,1)) + np.asarray(IMG_NORM_MEAN).reshape(3,1,1)
+    img = np.transpose(img, (1,2,0)) * 255.
+    img = img.astype(np.uint8)
+    return img
+
 def unpatch(data, patch_size=14, c=3, img_size=224):
     # c = 3
     if len(data.shape) == 2:
@@ -37,4 +50,3 @@ def unpatch(data, patch_size=14, c=3, img_size=224):
     data = data.reshape([B,h,w,p,q,c])
     data = torch.einsum('nhwpqc->nchpwq', data)
     return data.reshape([B,c,img_size,img_size])
-

@@ -141,11 +141,13 @@ class SMPL_Layer(nn.Module):
 
         # Projection in camera plane
         j2d = perspective_projection(j3d_cam, K)
+        v2d = perspective_projection(verts_cam, K)
 
         out.update({
-            'verts_smplx_cam': verts_cam,
-            'j3d': j3d_cam, 
+            'v3d': verts_cam, # in 3d camera space
+            'j3d': j3d_cam, # in 3d camera space
             'j2d': j2d, 
+            'v2d': v2d, 
             'transl': transl, # translation of the primary keypoint
             'transl_pelvis': j3d_cam[:,[0]], # root=pelvis
         })
