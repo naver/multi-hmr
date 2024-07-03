@@ -426,7 +426,7 @@ class Trainer(object):
 
                 img = np.concatenate([img_array, pred_rend_array, gt_rend_array], 1)
                 # Image.fromarray(img).save('img.jpg');ipdb.set_trace() # debugging
-                Image.fromarray(img).save(os.path.join(self.args.visu_dir, f"img_epoch{self.current_epoch:04d}_{i:04d}.jpg"))
+                Image.fromarray(img).save(os.path.join(self.args.visu_dir, f"img_epoch{self.current_epoch:04d}_{data.dataset.name}_{i:04d}.jpg"))
 
         # final metrics
         print(f"***EVAL METRICS - {data.dataset.name}-{data.dataset.split}-{data.dataset.subsample}***")

@@ -13,6 +13,10 @@
   </p>
 
   <p align="center">
+    <b>ECCV'24</b>
+  </p>
+
+  <p align="center">
     <sup>*</sup> equal contribution
   </p>
 
@@ -92,9 +96,15 @@ We provide multiple pre-trained checkpoints.
 Here is a list of their associated features.
 Once downloaded you need to place them into `$HOME/models/multiHMR`.
 
-| modelname                     | training data                     | backbone | resolution | runtime (ms) |
-|-------------------------------|-----------------------------------|----------|------------|--------------|
-| [multiHMR_896_L](https://download.europe.naverlabs.com/ComputerVision/MultiHMR/multiHMR_896_L.pt)    | BEDLAM+AGORA+CUFFS+UBody                      | ViT-L    | 896x896    |    126       |
+| modelname                     | training data                     | backbone | resolution | runtime (ms) | PVE-3PDW-test | PVE-EHF | PVE-BEDLAM-val | comment |
+|-------------------------------|-----------------------------------|----------|------------|--------------|----------|---------|---------|---------|
+| [multiHMR_896_L](https://download.europe.naverlabs.com/ComputerVision/MultiHMR/multiHMR_896_L.pt)    | BEDLAM+AGORA+CUFFS+UBody                      | ViT-L    | 896x896    |    126      | 89.9  | 42.2 | 56.7 | initial ckpt |
+| [multiHMR_672_L](https://download.europe.naverlabs.com/ComputerVision/MultiHMR/multiHMR_672_L.pt)    | BEDLAM+AGORA+CUFFS+UBody                      | ViT-L    | 672x672    |     74      | 94.1  | 37.0 | 58.6 | longer training |
+| [multiHMR_672_B](https://download.europe.naverlabs.com/ComputerVision/MultiHMR/multiHMR_672_B.pt)    | BEDLAM+AGORA+CUFFS+UBody                      | ViT-B    | 672x672    |     43      | 94.0  | 43.6 | 67.2 | longer training |
+| [multiHMR_672_S](https://download.europe.naverlabs.com/ComputerVision/MultiHMR/multiHMR_672_S.pt)    | BEDLAM+AGORA+CUFFS+UBody                      | ViT-S    | 672x672    |     29      | 102.4 | 49.3 | 78.9 | longer training |
+<!-- | [multiHMR_896_L_universal](https://download.europe.naverlabs.com/ComputerVision/MultiHMR/)    | BEDLAM+AGORA+CUFFS+UBody                      | ViT-L    | 896x896    |    126       | 88.2 | 39.4 | 57.9 | longer training | -->
+<!-- | [multiHMR_1288_L_bedlam](https://download.europe.naverlabs.com/ComputerVision/MultiHMR/)    | BEDLAM(train+val)                      | ViT-L    | 1288x1288    |    ?       | ? | ? | ckpt used for BEDLAM leaderboard | -->
+<!-- | [multiHMR_1288_L_agora](https://download.europe.naverlabs.com/ComputerVision/MultiHMR/)    | BEDLAM(train+val)+AGORA(train+val)                      | ViT-L    | 1288x1288    |    ?       | ? | ? | ckpt used for AGORA leaderboard | -->
 
 We compute the runtime on GPU V100-32GB.
 
