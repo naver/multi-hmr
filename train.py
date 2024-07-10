@@ -338,7 +338,9 @@ class Trainer(object):
         print(f"\nEVAL: ")
         self.model.eval()
 
-        meters = {k: AverageMeter(k) for k in ['pve', 'pa_pve', 'precision', 'recall', 'f1_score']}
+        meters = {k: AverageMeter(k) for k in ['pve', 'pa_pve', 'precision', 'recall', 'f1_score',
+                                               'mpjpe', 'pa_mpjpe'
+                                               ]}
         count, miss, fp = 0, 0, 0
 
         for i, (x,y) in enumerate(tqdm(data)):
@@ -390,11 +392,45 @@ class Trainer(object):
                     pa_v3d_hat_ctx = s * (R.reshape(1,3,3) @ v3d_hat_ctx.reshape(-1,3,1)).reshape(-1,3) + t
                     pa_pve = ((torch.sqrt(((v3d_ctx - pa_v3d_hat_ctx) ** 2).sum(-1))) * 1000).mean()
                     meters['pa_pve'].update(pa_pve.item())
+
+                    # MPJPE for 3DPW only
+                    if data.dataset.name == '3dpw':
+                        if i == 0:
+                            # Can be download from https://github.com/nkolot/SPIN/blob/master/fetch_data.sh#L6C58-L6C78
+                            self.J_regressor_h36m = torch.Tensor(np.load('models/smpl/J_regressor_h36m.npy')).to(self.device)
+                            # https://github.com/nkolot/SPIN/blob/2476c436013055be5cb3905e4e4ecfa86966fac3/constants.py#L93C1-L95C31
+                            self.H36M_TO_J17 = [6, 5, 4, 1, 2, 3, 16, 15, 14, 11, 12, 13, 8, 10, 0, 7, 9]
+                            self.H36M_TO_J14 = self.H36M_TO_J17[:14]
+                        
+                        # H36m joints
+                        h36m = self.J_regressor_h36m @ v3d_ctx
+                        h36m_hat = self.J_regressor_h36m @ v3d_hat_ctx
+
+                        # center around h36m-pelvis
+                        h36m_ctx = h36m - h36m[[0]]
+                        h36m_hat_ctx = h36m_hat - h36m_hat[[0]]
+
+                        # 14 joints only
+                        h36m_ctx = h36m_ctx[self.H36M_TO_J14]
+                        h36m_hat_ctx = h36m_hat_ctx[self.H36M_TO_J14]
+
+                        # MPJPE
+                        mpjpe = ((torch.sqrt(((h36m_ctx - h36m_hat_ctx) ** 2).sum(-1))) * 1000).mean()
+                        meters['mpjpe'].update(mpjpe.item())
+
+                        # PA-MPJPE
+                        (R,t,s) = roma.rigid_points_registration(h36m_hat_ctx, h36m_ctx, compute_scaling=True)
+                        pa_h36m_hat_ctx = s * (R.reshape(1,3,3) @ h36m_hat_ctx.reshape(-1,3,1)).reshape(-1,3) + t
+                        pa_mpjpe = ((torch.sqrt(((h36m_ctx - pa_h36m_hat_ctx) ** 2).sum(-1))) * 1000).mean()
+                        meters['pa_mpjpe'].update(pa_mpjpe.item())
             
             # log
             if i % self.args.log_freq == 0:
                 precision, recall, f1_score = compute_prf1(count, miss, fp)
-                print(f"i={i} - Recall={recall:.1f} - PVE={meters['pve'].avg:.1f} - PA-PVE={meters['pa_pve'].avg:.1f}")
+                if data.dataset.name == '3dpw':
+                    print(f"i={i} - Recall={recall:.1f} - PVE={meters['pve'].avg:.1f} - PA-PVE={meters['pa_pve'].avg:.1f} - MPJPE={meters['mpjpe'].avg:.1f} - PA-MPJPE={meters['pa_mpjpe'].avg:.1f}")
+                else:    
+                    print(f"i={i} - Recall={recall:.1f} - PVE={meters['pve'].avg:.1f} - PA-PVE={meters['pa_pve'].avg:.1f}")
                 sys.stdout.flush()
 
             # visu
