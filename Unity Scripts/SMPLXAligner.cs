@@ -1,6 +1,7 @@
 using UnityEngine;
 using Newtonsoft.Json;
 using System.Collections.Generic;
+using System.IO;
 
 public class SMPLXAligner : MonoBehaviour
 {
@@ -12,39 +13,36 @@ public class SMPLXAligner : MonoBehaviour
     public float jointSize = 5f; // Tamaño de los círculos en píxeles
     private Vector2[] jointsScreenPositions; // Array para almacenar las posiciones de los joints en la pantalla
     
-    private List<JSONReader.Data> parametersList;
+    private JSONReader.Data parameters;
     private string[] _smplxJointNames = new string[] { "pelvis", "left_hip", "right_hip", "spine1", "left_knee", "right_knee", "spine2", "left_ankle", "right_ankle", "spine3", "left_foot", "right_foot", "neck", "left_collar", "right_collar", "head", "left_shoulder", "right_shoulder", "left_elbow", "right_elbow", "left_wrist", "right_wrist", "left_index1", "left_index2", "left_index3", "left_middle1", "left_middle2", "left_middle3", "left_pinky1", "left_pinky2", "left_pinky3", "left_ring1", "left_ring2", "left_ring3", "left_thumb1", "left_thumb2", "left_thumb3", "right_index1", "right_index2", "right_index3", "right_middle1", "right_middle2", "right_middle3", "right_pinky1", "right_pinky2", "right_pinky3", "right_ring1", "right_ring2", "right_ring3", "right_thumb1", "right_thumb2", "right_thumb3", "jaw"};
 
     void Start()
     {
         JSONReader jsonReader = new JSONReader();
         jsonReader.ReadJSON(jsonFilePath);
-        parametersList = jsonReader.GetData();
+        parameters = jsonReader.GetData();
 
-        if (parametersList != null)
+        if (parameters != null)
         {
-            foreach (var parameters in parametersList)
-            {
-                SetupCamera(parameters);
-                AlignSMPLX(parameters);
-                SetupBackgroundImage();
-            }
+            SetupCamera(parameters);
+            AlignSMPLX(parameters);
+            SetupBackgroundImage();
         }
     }
 
     void SetupCamera(JSONReader.Data parameters)
     {
-        if (parameters.camera.focalLength.Count >= 2 && parameters.camera.principalPoint.Count >= 2 && parameters.camera.imageSize.Count >= 2)
+        if (parameters.camera_intrinsics != null && parameters.camera_intrinsics.Count >= 3)
         {
-            float fx = parameters.camera.focalLength[0];
-            float fy = parameters.camera.focalLength[1];
-            float cx = parameters.camera.principalPoint[0];
-            float cy = parameters.camera.principalPoint[1];
+            float fx = parameters.camera_intrinsics[0][0];
+            float fy = parameters.camera_intrinsics[1][1];
+            float cx = parameters.camera_intrinsics[0][2];
+            float cy = parameters.camera_intrinsics[1][2];
 
-            float fovY = 2 * Mathf.Atan(parameters.camera.imageSize[1] / (2 * fy)) * Mathf.Rad2Deg;
+            float fovY = 2 * Mathf.Atan(parameters.resized_height / (2 * fy)) * Mathf.Rad2Deg;
             alignmentCamera.fieldOfView = fovY;
 
-            float aspect = (float)parameters.camera.imageSize[0] / parameters.camera.imageSize[1];
+            float aspect = (float)parameters.resized_width / parameters.resized_height;
             alignmentCamera.aspect = aspect;
         }
         else
@@ -55,7 +53,7 @@ public class SMPLXAligner : MonoBehaviour
 
     void AlignSMPLX(JSONReader.Data parameters)
     {
-        if (parameters.location == null || parameters.location.Count < 2)
+        if (parameters.humans == null || parameters.humans.Count == 0 || parameters.humans[0].location == null || parameters.humans[0].location.Count < 3)
         {
             Debug.LogError("Location parameters are not valid.");
             return;
@@ -64,49 +62,54 @@ public class SMPLXAligner : MonoBehaviour
         GameObject smplxInstance = Instantiate(smplxPrefab);
         SMPLX smplxComponent = smplxInstance.GetComponent<SMPLX>();
 
-        Vector3 position = new Vector3(parameters.location[0], parameters.location[1], parameters.location[2]);
+        Vector3 position = new Vector3(parameters.humans[0].location[0], parameters.humans[0].location[1], parameters.humans[0].location[2]);
         smplxInstance.transform.position = position;
 
-        if (parameters.rotation == null || parameters.rotation.Count < 3)
+        if (parameters.humans[0].rotation_vector == null || parameters.humans[0].rotation_vector.Count == 0 || parameters.humans[0].rotation_vector[0].Count < 3)
         {
             Debug.LogError("Rotation parameters are not valid.");
             return;
         }
 
-        Vector3 rotationVector = new Vector3(parameters.rotation[0], parameters.rotation[1], parameters.rotation[2]);
+        Vector3 rotationVector = new Vector3(parameters.humans[0].rotation_vector[0][0], parameters.humans[0].rotation_vector[0][1], parameters.humans[0].rotation_vector[0][2]);
         smplxInstance.transform.rotation = Quaternion.Euler(rotationVector * Mathf.Rad2Deg) * Quaternion.Euler(0, 180, 0);
 
-        if (parameters.pose != null && parameters.pose.Count == _smplxJointNames.Length)
+        if (parameters.humans[0].translation_pelvis != null && parameters.humans[0].translation_pelvis.Count > 0)
         {
-            ApplyPose(smplxComponent, parameters.pose);
+            AdjustPelvisPosition(smplxInstance, parameters.humans[0].translation_pelvis[0]);
+        }
+
+        if (parameters.humans[0].rotation_vector != null && parameters.humans[0].rotation_vector.Count == _smplxJointNames.Length)
+        {
+            ApplyPose(smplxComponent, parameters.humans[0].rotation_vector);
         }
         else
         {
             Debug.LogError("Pose parameters are not valid.");
         }
 
-        if (parameters.shape != null && parameters.shape.Count == SMPLX.NUM_BETAS)
+        if (parameters.humans[0].shape != null && parameters.humans[0].shape.Count == SMPLX.NUM_BETAS)
         {
-            ApplyShape(smplxComponent, parameters.shape);
+            ApplyShape(smplxComponent, parameters.humans[0].shape);
         }
         else
         {
             Debug.LogError("Shape parameters are not valid.");
         }
 
-        if (parameters.expression != null && parameters.expression.Count == SMPLX.NUM_EXPRESSIONS)
+        if (parameters.humans[0].expression != null && parameters.humans[0].expression.Count == SMPLX.NUM_EXPRESSIONS)
         {
-            ApplyExpression(smplxComponent, parameters.expression);
+            ApplyExpression(smplxComponent, parameters.humans[0].expression);
         }
         else
         {
             Debug.LogError("Expression parameters are not valid.");
         }
 
-        if (parameters.joints2D != null)
+        if (parameters.humans[0].joints_2d != null)
         {
-            CalculateJointsScreenPositions(parameters.joints2D, parameters);
-            AlignWithJoint2D(smplxInstance, parameters.joints2D, (float)MODEL_IMAGE_SIZE, parameters.camera.imageSize[0], parameters.camera.imageSize[1], parameters.location[2]);
+            CalculateJointsScreenPositions(parameters.humans[0].joints_2d, parameters);
+            AlignWithJoint2D(smplxInstance, parameters.humans[0].joints_2d, (float)MODEL_IMAGE_SIZE, parameters.resized_width, parameters.resized_height, parameters.humans[0].location[2]);
         }
     }
 
@@ -219,7 +222,7 @@ public class SMPLXAligner : MonoBehaviour
 
     void CalculateJointsScreenPositions(List<List<float>> joints_2d, JSONReader.Data parameters)
     {
-        if (joints_2d == null || parameters.camera.imageSize.Count < 2)
+        if (joints_2d == null || parameters.resized_width == 0 || parameters.resized_height == 0)
         {
             Debug.LogError("Joint 2D parameters or camera image size are not valid.");
             return;
@@ -227,15 +230,15 @@ public class SMPLXAligner : MonoBehaviour
 
         jointsScreenPositions = new Vector2[joints_2d.Count];
 
-        float scaleX = (float)Screen.width / parameters.camera.imageSize[0];
-        float scaleY = (float)Screen.height / parameters.camera.imageSize[1];
+        float scaleX = (float)Screen.width / parameters.resized_width;
+        float scaleY = (float)Screen.height / parameters.resized_height;
 
         for (int i = 0; i < joints_2d.Count; i++)
         {
             if (joints_2d[i].Count >= 2)
             {
-                float x = (joints_2d[i][0] - (MODEL_IMAGE_SIZE - parameters.camera.imageSize[0]) / 2) * scaleX;
-                float y = (parameters.camera.imageSize[1] - joints_2d[i][1]) * scaleY;
+                float x = (joints_2d[i][0] - (MODEL_IMAGE_SIZE - parameters.resized_width) / 2) * scaleX;
+                float y = (parameters.resized_height - joints_2d[i][1]) * scaleY;
                 jointsScreenPositions[i] = new Vector2(x, y);
 
                 if (i == 0) Debug.Log($"Pelvis jointsScreenPositions[{i}]: {jointsScreenPositions[i]}");
