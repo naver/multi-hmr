@@ -1,42 +1,41 @@
-using UnityEngine;
+using System;
+using System.Collections.Generic;
 using System.IO;
 using Newtonsoft.Json;
 
-[System.Serializable]
-public class HumanParams
+public class JSONReader
 {
-    public float[] location;
-    public float[] translation;
-    public float[][] translation_pelvis;
-    public float[][] rotation_vector;
-    public float[] expression;
-    public float[] shape;
-    public float[][] joints_2d;
-}
-
-[System.Serializable]
-public class SMPLXParams
-{
-    public int image_width;
-    public int image_height;
-    public float[][] camera_intrinsics;
-    public HumanParams[] humans;
-}
-
-public class JSONReader : MonoBehaviour
-{
-    public static SMPLXParams ReadJSONFile(string filePath)
+    public class Data
     {
-        if (File.Exists(filePath))
-        {
-            string jsonContent = File.ReadAllText(filePath);
-            SMPLXParams parameters = JsonConvert.DeserializeObject<SMPLXParams>(jsonContent);
-            return parameters;
-        }
-        else
-        {
-            Debug.LogError("JSON file not found: " + filePath);
-            return null;
-        }
+        public List<List<float>> pose { get; set; }
+        public List<float> shape { get; set; }
+        public List<float> expression { get; set; }
+        public List<float> location { get; set; }
+        public float distance { get; set; }
+        public List<float> rotation { get; set; }
+        public List<float> positionOffset { get; set; }
+        public List<float> rotationOffset { get; set; }
+        public Camera camera { get; set; }
+        public List<List<float>> joints2D { get; set; }
+    }
+
+    public class Camera
+    {
+        public List<float> focalLength { get; set; }
+        public List<float> principalPoint { get; set; }
+        public List<int> imageSize { get; set; }
+    }
+
+    private List<Data> dataList;
+
+    public void ReadJSON(string filePath)
+    {
+        string json = File.ReadAllText(filePath);
+        dataList = JsonConvert.DeserializeObject<List<Data>>(json);
+    }
+
+    public List<Data> GetData()
+    {
+        return dataList;
     }
 }
