@@ -10,7 +10,7 @@ public class SMPLXAligner : MonoBehaviour
     public Texture2D backgroundImage;
     public string jsonFilePath;
 
-    public Vector3 manualOffset = new Vector3(0.077f, -1.533f, 0.31f); // Ajusta estos valores según sea necesario
+    public Vector3 manualOffset = new Vector3(0.077f, -1.533f, 0.31f);
     private GameObject instanciaSmplx;
 
     private List<GameObject> smplxInstances = new List<GameObject>();
@@ -22,34 +22,19 @@ public class SMPLXAligner : MonoBehaviour
     {
         canBeUpdated = false;
 
-        // Load SMPL-X parameters from file
         List<SMPLXParams> smplxParamsList = JSONReader.ReadJSONFile(jsonFilePath);
-        
+
         if (smplxParamsList != null && smplxParamsList.Count > 0 && smplxParamsList[0].camera != null)
         {
-            // Configurar la cámara con los parámetros cargados
-            CameraParams cameraParams = smplxParamsList[0].camera;
-            mainCamera.orthographic = false;
-            mainCamera.fieldOfView = 2 * Mathf.Atan(cameraParams.imageSize[1] / (2 * cameraParams.focalLength[1])) * Mathf.Rad2Deg; //59f;
-            mainCamera.aspect = (float)cameraParams.imageSize[0] / cameraParams.imageSize[1];
-            mainCamera.nearClipPlane = 0.1f;
-            mainCamera.farClipPlane = 1000f;
+            SetupCamera(smplxParamsList[0].camera);
         }
         else
         {
             Debug.LogWarning("No se encontraron parámetros de cámara en el archivo JSON.");
-
-            // Configurar la cámara
-            mainCamera.orthographic = false;
-            mainCamera.fieldOfView = 59f; //60f; // Asegúrate de que esto coincida con el FOV usado en demoUnity.py
-            mainCamera.nearClipPlane = 0.1f;
-            mainCamera.farClipPlane = 1000f;
+            SetupDefaultCamera();
         }
-        
-        // Set up background image
+
         SetupBackgroundImage();
-        
-        // Create and align SMPL-X instances
         CreateAndAlignSMPLX(smplxParamsList);
     }
 
@@ -57,18 +42,41 @@ public class SMPLXAligner : MonoBehaviour
     {
         if (canBeUpdated) instanciaSmplx.transform.position = initialPosition + manualOffset;
     }
-    
+
+    void SetupCamera(CameraParams cameraParams)
+    {
+        if (cameraParams == null || cameraParams.imageSize == null || cameraParams.focalLength == null)
+        {
+            Debug.LogError("Camera parameters are not properly defined.");
+            return;
+        }
+
+        mainCamera.orthographic = false;
+        mainCamera.fieldOfView = 2 * Mathf.Atan(cameraParams.imageSize[1] / (2 * cameraParams.focalLength[1])) * Mathf.Rad2Deg;
+        mainCamera.aspect = (float)cameraParams.imageSize[0] / cameraParams.imageSize[1];
+        mainCamera.nearClipPlane = 0.1f;
+        mainCamera.farClipPlane = 1000f;
+    }
+
+    void SetupDefaultCamera()
+    {
+        mainCamera.orthographic = false;
+        mainCamera.fieldOfView = 59f;
+        mainCamera.nearClipPlane = 0.1f;
+        mainCamera.farClipPlane = 1000f;
+    }
+
     void SetupBackgroundImage()
     {
         GameObject quad = GameObject.CreatePrimitive(PrimitiveType.Quad);
-        quad.transform.position = new Vector3(0, 0, 10); // Ajusta esto según sea necesario
-        
+        quad.transform.position = new Vector3(0, 0, 10);
+
         float aspectRatio = (float)backgroundImage.width / backgroundImage.height;
         float quadHeight = 2f * Mathf.Tan(mainCamera.fieldOfView * 0.5f * Mathf.Deg2Rad) * quad.transform.position.z;
         float quadWidth = quadHeight * aspectRatio;
-        
+
         quad.transform.localScale = new Vector3(quadWidth, quadHeight, 1);
-        
+
         Material mat = new Material(Shader.Find("Unlit/Texture"));
         mat.mainTexture = backgroundImage;
         quad.GetComponent<Renderer>().material = mat;
@@ -76,20 +84,35 @@ public class SMPLXAligner : MonoBehaviour
 
     void CreateAndAlignSMPLX(List<SMPLXParams> smplxParamsList)
     {
+        if (smplxParamsList == null)
+        {
+            Debug.LogError("smplxParamsList es nulo.");
+            return;
+        }
+
         foreach (var parames in smplxParamsList)
         {
             GameObject smplxInstance = Instantiate(smplxPrefab);
 
+            if (smplxInstance == null)
+            {
+                Debug.LogError("La instancia de smplxPrefab es nula.");
+                continue;
+            }
+
             smplxPrefab.SetActive(false);
             instanciaSmplx = smplxInstance;
-
             smplxInstances.Add(smplxInstance);
 
-            // Apply SMPL-X parameters
             ApplySMPLXParams(smplxInstance, parames);
-
-            // Align instance with camera
-            AlignWithCamera(smplxInstance, parames);
+            if (parames.locationV != null)
+            {
+                AlignWithCamera(smplxInstance, parames);
+            }
+            else
+            {
+                Debug.LogWarning("parames.locationV es nulo. Se omite el alineamiento para esta instancia.");
+            }
 
             initialPosition = instanciaSmplx.transform.position;
             canBeUpdated = true;
@@ -99,84 +122,117 @@ public class SMPLXAligner : MonoBehaviour
     void ApplySMPLXParams(GameObject smplxInstance, SMPLXParams parames)
     {
         SMPLX smplxComponent = smplxInstance.GetComponent<SMPLX>();
-        if (smplxComponent != null)
+        if (smplxComponent != null && parames.humans != null && parames.humans.Length > 0 && parames.humans[0] != null)
         {
-            //Set Pose
-            if (parames.humans[0].rotation_vector != null) SetPose(smplxComponent, parames.humans[0].rotation_vector);
-            
-            //Set Expression
-            if (parames.humans[0].expression != null) SetExpression(smplxComponent, parames.humans[0].expression);
-            
-            //Set Betas
-            if (parames.humans[0].shape != null) SetShape(smplxComponent, parames.humans[0].shape);
+            if (parames.humans[0].rotation_vector != null)
+                SetPose(smplxComponent, parames.humans[0].rotation_vector);
+
+            if (parames.humans[0].expression != null)
+                SetExpression(smplxComponent, parames.humans[0].expression);
+
+            if (parames.humans[0].shape != null)
+                SetShape(smplxComponent, parames.humans[0].shape);
+        }
+        else
+        {
+            Debug.LogWarning("SMPLXParams.humans is null or empty, or the first element is null.");
         }
     }
 
     void AlignWithCamera(GameObject smplxInstance, SMPLXParams parames)
     {
-        // Ajustar la posición
-        Vector3 worldPosition = new Vector3();
+        if (smplxInstance == null)
+        {
+            Debug.LogError("smplxInstance es nulo.");
+            return;
+        }
+
+        if (parames == null)
+        {
+            Debug.LogError("parames es nulo.");
+            return;
+        }
+
+        if (parames.locationV == null)
+        {
+            Debug.LogError("parames.locationV es nulo.");
+            return;
+        }
+
+        Vector3 worldPosition;
         if (parames.camera != null)
         {
-            Vector2 normalizedPosition = new Vector2(parames.locationV[0] / parames.camera.imageSize[0], 
-                                                parames.locationV[1] / parames.camera.imageSize[1]);
-            worldPosition = mainCamera.ViewportToWorldPoint(new Vector3(normalizedPosition.x, 
-                                                                            1 - normalizedPosition.y, 
-                                                                            parames.distance));
+            if (parames.camera.imageSize == null)
+            {
+                Debug.LogError("parames.camera.imageSize es nulo.");
+                return;
+            }
+
+            Vector2 imageSize = new Vector2(parames.camera.imageSize[0], parames.camera.imageSize[1]);
+            worldPosition = CalculateWorldPosition(parames.locationV, imageSize, parames.distance);
         }
         else
         {
-             // Ajustar la posición
-            Vector2 normalizedPosition = new Vector2(parames.locationV[0] / backgroundImage.width, 
-                                                    parames.locationV[1] / backgroundImage.height);
-            worldPosition = mainCamera.ViewportToWorldPoint(new Vector3(normalizedPosition.x, 
-                                                                                1 - normalizedPosition.y, 
-                                                                                parames.distance));
+            Vector2 imageSize = new Vector2(backgroundImage.width, backgroundImage.height);
+            worldPosition = CalculateWorldPosition(parames.locationV, imageSize, parames.distance);
         }
-        
-        // Ajustar la rotación
-        Quaternion worldRotation = Quaternion.Euler(parames.rotationV[0], 
-                                                    -parames.rotationV[1], 
-                                                    -parames.rotationV[2] + 180f);
 
-        // Aplicar rotación y posición
+        ApplyTransformations(smplxInstance, worldPosition, parames);
+    }
+
+    Vector3 CalculateWorldPosition(float[] location, Vector2 imageSize, float distance)
+    {
+        if (location == null || imageSize == null)
+        {
+            Debug.LogError("location o imageSize es nulo.");
+            return Vector3.zero;
+        }
+
+        Vector2 normalizedPosition = new Vector2(location[0] / imageSize.x, location[1] / imageSize.y);
+        return mainCamera.ViewportToWorldPoint(new Vector3(normalizedPosition.x, 1 - normalizedPosition.y, distance));
+    }
+
+    void ApplyTransformations(GameObject smplxInstance, Vector3 worldPosition, SMPLXParams parames)
+    {
+        if (parames.rotationV == null || parames.positionOffsetV == null || parames.rotationOffsetV == null)
+        {
+            Debug.LogError("Uno o más parámetros de transformación son nulos.");
+            return;
+        }
+
+        Quaternion worldRotation = Quaternion.Euler(parames.rotationV[0], -parames.rotationV[1], -parames.rotationV[2] + 180f);
+
         smplxInstance.transform.rotation = worldRotation;
         smplxInstance.transform.position = worldPosition;
 
-        // Aplicar ajustes finos
-        smplxInstance.transform.position += smplxInstance.transform.TransformDirection(parames.positionOffsetV);
-        smplxInstance.transform.rotation *= Quaternion.Euler(parames.rotationOffsetV);
+        smplxInstance.transform.position += smplxInstance.transform.TransformDirection(new Vector3(parames.positionOffsetV[0], parames.positionOffsetV[1], parames.positionOffsetV[2]));
+        smplxInstance.transform.rotation *= Quaternion.Euler(new Vector3(parames.rotationOffsetV[0], parames.rotationOffsetV[1], parames.rotationOffsetV[2]));
 
-        // Actualizar la posición inicial
         initialPosition = smplxInstance.transform.position;
         canBeUpdated = true;
     }
 
     private void SetShape(SMPLX smplxMannequin, float[] newBetas)
     {
-        if (newBetas.Length != SMPLX.NUM_BETAS)
+        if (newBetas == null || newBetas.Length != SMPLX.NUM_BETAS)
         {
-            Debug.LogError("No tiene el número correcto de betas: " + newBetas.Length + " porque deberían ser: " + SMPLX.NUM_BETAS);
+            Debug.LogError("No tiene el número correcto de betas o es nulo: " + (newBetas == null ? "null" : newBetas.Length.ToString()) + " porque deberían ser: " + SMPLX.NUM_BETAS);
             return;
         }
-        
+
         for (int i = 0; i < SMPLX.NUM_BETAS; i++)
         {
             smplxMannequin.betas[i] = newBetas[i];
-            //Debug.Log("newBetas[" + i + "]: " + newBetas[i]);
         }
         smplxMannequin.SetBetaShapes();
-
         Debug.Log("Se han aplicado correctamente los blendshapes.");
     }
 
-    private void SetPose(SMPLX smplxMannequin, float[][] newPose) 
+    private void SetPose(SMPLX smplxMannequin, float[][] newPose)
     {
-        //Debug.Log("El largo de las poses es de: " + newPose.Length);
-
-        if (newPose.Length != _smplxJointNames.Length)
+        if (newPose == null || newPose.Length != _smplxJointNames.Length)
         {
-            Debug.LogError("No tiene el número correcto de valores: " + newPose.Length + " porque deberían ser: " + _smplxJointNames.Length);
+            Debug.LogError("No tiene el número correcto de valores o es nulo: " + (newPose == null ? "null" : newPose.Length.ToString()) + " porque deberían ser: " + _smplxJointNames.Length);
             return;
         }
 
@@ -187,33 +243,25 @@ public class SMPLXAligner : MonoBehaviour
             float rodY = newPose[i][1];
             float rodZ = newPose[i][2];
 
-            // Convertir de notación de Rodrigues a cuaternión
             Quaternion rotation = SMPLX.QuatFromRodrigues(rodX, rodY, rodZ);
-
-            // Aplicar la rotación al joint
             smplxMannequin.SetLocalJointRotation(jointName, rotation);
         }
 
-        // Actualizar las posiciones de los joints y los correctivos de pose
-        //smplxMannequin.UpdateJointPositions();
-        //smplxMannequin.UpdatePoseCorrectives();
         smplxMannequin.EnablePoseCorrectives(true);
-
         Debug.Log("Se ha aplicado correctamente la pose.");
     }
 
-    private void SetExpression(SMPLX smplxMannequin, float[] newExpression) 
+    private void SetExpression(SMPLX smplxMannequin, float[] newExpression)
     {
-        if (newExpression.Length != SMPLX.NUM_EXPRESSIONS)
+        if (newExpression == null || newExpression.Length != SMPLX.NUM_EXPRESSIONS)
         {
-            Debug.LogError("No tiene el número correcto de expresiones: " + newExpression.Length + " porque deberían ser: " + SMPLX.NUM_EXPRESSIONS);
+            Debug.LogError("No tiene el número correcto de expresiones o es nulo: " + (newExpression == null ? "null" : newExpression.Length.ToString()) + " porque deberían ser: " + SMPLX.NUM_EXPRESSIONS);
             return;
         }
-        
+
         for (int i = 0; i < SMPLX.NUM_EXPRESSIONS; i++)
         {
             smplxMannequin.expressions[i] = newExpression[i];
-            //Debug.Log("newExpression[" + i + "]: " + newExpression[i]);
         }
         smplxMannequin.SetExpressions();
 
