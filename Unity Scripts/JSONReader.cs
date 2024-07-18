@@ -1,7 +1,25 @@
 using UnityEngine;
+using System.Collections.Generic;
 using System.IO;
 using Newtonsoft.Json;
-using System.Collections.Generic;
+
+public class JSONReader : MonoBehaviour
+{
+    public static List<SMPLXParams> ReadJSONFile(string filePath)
+    {
+        if (File.Exists(filePath))
+        {
+            string jsonContent = File.ReadAllText(filePath);
+            SMPLXParams parameters = JsonConvert.DeserializeObject<SMPLXParams>(jsonContent);
+            return new List<SMPLXParams> { parameters };
+        }
+        else
+        {
+            Debug.LogError("JSON file not found: " + filePath);
+            return null;
+        }
+    }
+}
 
 [System.Serializable]
 public class HumanParams
@@ -35,22 +53,4 @@ public class SMPLXParams
     public float[] rotationV;
     public float[] positionOffsetV;
     public float[] rotationOffsetV;
-}
-
-public class JSONReader : MonoBehaviour
-{
-    public static List<SMPLXParams> ReadJSONFile(string filePath)
-    {
-        if (File.Exists(filePath))
-        {
-            string jsonContent = File.ReadAllText(filePath);
-            List<SMPLXParams> parameters = JsonConvert.DeserializeObject<List<SMPLXParams>>(jsonContent);
-            return parameters;
-        }
-        else
-        {
-            Debug.LogError("JSON file not found: " + filePath);
-            return null;
-        }
-    }
 }
