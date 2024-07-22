@@ -223,28 +223,20 @@ if __name__ == "__main__":
             if args.export_json:
                 # Crear un diccionario para almacenar los parámetros
                 params_dict = {
-                    "image_width": img_pil_nopad.size[0],
-                    "image_height": img_pil_nopad.size[1],
-                    "resized_width": resized_dims[0],
-                    "resized_height": resized_dims[1],
-                    "checkpoint_resolution": model.img_size,
+                    "resized_width": img_pil_nopad.size[0],  # Actualizar con el ancho real de la imagen de salida
                     "camera_intrinsics": tensor_to_list(K[0]),
                     "humans": []
                 }
-
                 for human in humans:
                     human_params = {
                         "location": tensor_to_list(human['loc']),
                         "translation": tensor_to_list(human['transl']),
                         "translation_pelvis": tensor_to_list(human['transl_pelvis']),
-                        "rotation_vector": tensor_to_list(human['rotvec']),
+                        "rotation_vector": tensor_to_list(human['pose']),
                         "expression": tensor_to_list(human['expression']),
-                        "shape": tensor_to_list(human['shape']),
-                        "joints_2d": tensor_to_list(human['j2d']),
-                        "joints_3d": tensor_to_list(human['j3d'])
+                        "shape": tensor_to_list(human['shape'])
                     }
                     params_dict["humans"].append(human_params)
-
                 # Guardar el diccionario como JSON
                 json_path = os.path.join(args.out_folder, f"{Path(img_path).stem}_{model_name}_params.json")
                 with open(json_path, 'w') as f:
