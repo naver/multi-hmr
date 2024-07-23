@@ -7,9 +7,10 @@ import random
 import zipfile
 import time
 import json
+from PIL import Image, ImageOps
 
-from utils import MEAN_PARAMS, SMPLX_DIR
-from demo import load_model, get_camera_parameters, forward_model, open_image
+from utils import MEAN_PARAMS, SMPLX_DIR, normalize_rgb
+from demoJson import load_model, get_camera_parameters, forward_model, open_image
 from datetime import datetime
 from tqdm import tqdm
 from pathlib import Path
@@ -74,8 +75,32 @@ def process_frames(args, l_frame_paths, out_folder, model, model_name):
             print(f"File {input_path} does not exist. Skipping.")
             continue
 
-        duration, humans = infer_img(input_path, model, args)
+        duration, humans, resized_dims, K = infer_img(input_path, model, args)
         l_duration.append(duration)
+
+        if args.export_json:
+            params_dict = {
+                "frame_id": i,
+                "resized_width": resized_dims[0],
+                "resized_height": resized_dims[1],
+                "checkpoint_resolution": model.img_size,
+                "camera_intrinsics": tensor_to_list(K[0]),
+                "humans": []
+            }
+
+            for human in humans:
+                human_params = {
+                    "location": tensor_to_list(human['loc']),
+                    "translation": tensor_to_list(human['transl']),
+                    "translation_pelvis": tensor_to_list(human['transl_pelvis']),
+                    "rotation_vector": tensor_to_list(human['pose']),
+                    "expression": tensor_to_list(human['expression'])
+                }
+                params_dict["humans"].append(human_params)
+
+            json_path = os.path.join(out_folder, f"{Path(frame_path).stem}_{model_name}_params.json")
+            with open(json_path, 'w') as f:
+                json.dump(params_dict, f, indent=2)
 
         expand_if_1d = lambda x: np.expand_dims(x, axis=0) if isinstance(x, np.ndarray) and x.ndim == 1 else x
         for j, human in enumerate(humans):
@@ -115,7 +140,7 @@ def map_human(human):
 
 def infer_img(img_path, model, args):
     img_size = model.img_size
-    x, img_pil_nopad = open_image(img_path, img_size)
+    x, img_pil_nopad, resized_dims = open_image(img_path, img_size)
     p_x, p_y = None, None
     K = get_camera_parameters(model.img_size, fov=args.fov, p_x=p_x, p_y=p_y)
     start = time.time()
@@ -124,7 +149,7 @@ def infer_img(img_path, model, args):
                             nms_kernel_size=args.nms_kernel_size)
     duration = time.time() - start
 
-    return duration, outputs
+    return duration, outputs, resized_dims, K
 
 def zip_npz_files(folder_path, output_zip):
     with zipfile.ZipFile(output_zip, 'w', zipfile.ZIP_DEFLATED) as zipf:
@@ -135,6 +160,9 @@ def zip_npz_files(folder_path, output_zip):
                     zipf.write(file_path, os.path.relpath(file_path, folder_path))
 
     print(f"All .npz files from {folder_path} have been zipped into {output_zip}")
+
+def tensor_to_list(tensor):
+    return tensor.detach().cpu().numpy().tolist()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -150,6 +178,7 @@ if __name__ == "__main__":
     parser.add_argument("--fov", type=float, default=60)
     parser.add_argument("--distance", type=int, default=0, choices=[0,1], help='add distance on the reprojected mesh')
     parser.add_argument("--inference_id", type=str)
+    parser.add_argument("--export_json", type=int, default=1, choices=[0,1], help='export parameters as JSON')
     args = parser.parse_args()
 
     dict_args = vars(args)
