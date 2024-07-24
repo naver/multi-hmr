@@ -34,8 +34,8 @@ public class FrameData
 public class Human
 
 {
-    public float[][] location;
-    public float[][] translation;
+    public float[] location;
+    public float[] translation;
     public float[][] translation_pelvis;
     public float[][] rotation_vector;
     public float[] expression;

@@ -124,7 +124,7 @@ public class SMPLXAlignerFrames : MonoBehaviour
     foreach (Human human in frameData.humans)
     {
         // Convertir location a Vector2[]
-        Vector2[] locations = human.location.Select(loc => new Vector2((float)loc[0], (float)loc[1])).ToArray();
+        Vector2 locations = new Vector2(human.location[0], human.location[1]);
 
         // Instanciar objetos necesarios
         GameObject smplxInstance = Instantiate(smplxPrefab);
@@ -140,9 +140,9 @@ public class SMPLXAlignerFrames : MonoBehaviour
         // Posicionar smpl segun el primary keypoint (head)
         if ((locations != null) && (human.translation != null) && (human.translation_pelvis != null) && (frameData.resized_width != 0) && (frameData.resized_height != 0) && (frameData.checkpoint_resolution != 0)) 
         {
-            AdjustScale(smplxInstance, human.translation[0], human.translation_pelvis);
-            AlignWithHead3D(smplxInstance, human.translation[0], frameData.resized_width, frameData.resized_height, frameData.checkpoint_resolution);
-            AdjustRotation(smplxInstance, human.translation[0], human.translation_pelvis);
+            AdjustScale(smplxInstance, human.translation, human.translation_pelvis);
+            AlignWithHead3D(smplxInstance, human.translation, frameData.resized_width, frameData.resized_height, frameData.checkpoint_resolution);
+            AdjustRotation(smplxInstance, human.translation, human.translation_pelvis);
         }
         
         // Dibujar los Joints2D
