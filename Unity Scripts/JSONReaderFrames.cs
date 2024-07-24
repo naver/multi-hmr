@@ -32,10 +32,12 @@ public class FrameData
 }
 
 public class Human
+
 {
-    public Vector2[] location;
+    public float[][] location;
     public float[][] translation;
     public float[][] translation_pelvis;
     public float[][] rotation_vector;
     public float[] expression;
+
 }
