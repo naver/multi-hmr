@@ -106,6 +106,7 @@ public class SMPLXAlignerFrames : MonoBehaviour
 
     // Seleccionar el frame deseado
     FrameData frameData = frames[frameIndex];
+    Debug.Log($"Procesando frame_id: {frameData.frame_id}");
     if (!smplxInstance)
     {
         smplxInstance = Instantiate(smplxPrefab); // Instanciar solo si no existe

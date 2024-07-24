@@ -6,18 +6,28 @@ using UnityEngine;
 public static class JSONReaderFrames
 {
     public static List<FrameData> ReadJSONFile(string filePath)
+{
+    if (File.Exists(filePath))
     {
-        if (File.Exists(filePath))
+        string jsonContent = File.ReadAllText(filePath);
+        List<FrameData> frames = JsonConvert.DeserializeObject<List<FrameData>>(jsonContent);
+        
+        // Verificar el orden de los frames
+        for (int i = 0; i < frames.Count; i++)
         {
-            string jsonContent = File.ReadAllText(filePath);
-            List<FrameData> frames = JsonConvert.DeserializeObject<List<FrameData>>(jsonContent);
-            return frames;
+            if (frames[i].frame_id != i)
+            {
+                Debug.LogWarning($"Frame order mismatch: Expected frame_id {i}, but got {frames[i].frame_id}");
+            }
         }
-        else
-        {
-            Debug.LogError("JSON file not found: " + filePath);
-            return null;
-        }
+        
+        return frames;
+    }
+    else
+    {
+        Debug.LogError("JSON file not found: " + filePath);
+        return null;
+    }
     }
 }
 
