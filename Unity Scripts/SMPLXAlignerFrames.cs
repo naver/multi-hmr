@@ -25,6 +25,7 @@ public class SMPLXAlignerFrames : MonoBehaviour
     private GameObject joint3dParentGO;
     private List<GameObject> jointObjects = new List<GameObject>();
     private int currentFrame = 0;
+    private GameObject smplxInstance;
 
     void Start()
     {
@@ -102,19 +103,32 @@ public class SMPLXAlignerFrames : MonoBehaviour
             return;
         }
 
-        // Aquí seleccionamos el frame que deseamos usar
+    // Seleccionar el frame deseado
         FrameData frameData = frames[frameIndex];
+        if (!smplxInstance)
+        {
+            smplxInstance = Instantiate(smplxPrefab); // Instanciar solo si no existe
+        }
+        else
+        {
+        // Eliminar el objeto de joints 3D anterior si existe
+            foreach (Transform child in smplxInstance.transform)
+            {
+                Destroy(child.gameObject);
+            }
+        }
 
-        foreach (HumanParams human in frameData.humans)
+        SMPLX smplxComponent = smplxInstance.GetComponent<SMPLX>();
+
+        foreach (Human human in frameData.humans)
         {
             // Instanciar objetos necesarios
             GameObject smplxInstance = Instantiate(smplxPrefab);
-            SMPLX smplxComponent = smplxInstance.GetComponent<SMPLX>();
-            
+            SMPLX smplxComp = smplxInstance.GetComponent<SMPLX>();
             // Aplicar la pose, la forma y las expresiones al SMPL-X
-            if (human.rotation_vector != null) ApplyPose(smplxComponent, human.rotation_vector);
-            if (human.shape != null) ApplyShape(smplxComponent, human.shape);
-            if (human.expression != null) ApplyExpression(smplxComponent, human.expression);
+            if (human.rotation_vector != null) ApplyPose(smplxComp, human.rotation_vector);
+            //if (human.shape != null) ApplyShape(smplxComponent, human.shape);
+            if (human.expression != null) ApplyExpression(smplxComp, human.expression);
 
             // Rotar en 180° para que quede bien alineado
             smplxInstance.transform.rotation *= Quaternion.Euler(0, 0, 180);
@@ -128,6 +142,7 @@ public class SMPLXAlignerFrames : MonoBehaviour
             }
             
             // Dibujar los Joints2D
+            /*
             if ((human.joints_2d != null)&&(human.translation_pelvis != null) && (frameData.resized_width != 0) && (frameData.resized_height != 0) && (frameData.checkpoint_resolution != 0)) {
                 CalculateJoints2DScreenPositions(human.joints_2d, frameData.resized_width, frameData.resized_height, frameData.checkpoint_resolution);
             }
@@ -139,6 +154,7 @@ public class SMPLXAlignerFrames : MonoBehaviour
                 Transform joint3dParent = joint3dParentGO.transform;
                 CreateJoints3D(human.joints_3d, joint3dParent);
             }
+            */
         }
     }
 
@@ -385,3 +401,5 @@ public class SMPLXAlignerFrames : MonoBehaviour
         }
     }
 }
+
+
