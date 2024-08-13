@@ -49,5 +49,7 @@ public class Human
     public float[][] translation_pelvis;
     public float[][] rotation_vector;
     public float[] expression;
+    public float[][] joints_2d;
+    public float[][] joints_3d;
 
 }
