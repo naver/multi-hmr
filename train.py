@@ -401,7 +401,7 @@ class Trainer(object):
                             # https://github.com/nkolot/SPIN/blob/2476c436013055be5cb3905e4e4ecfa86966fac3/constants.py#L93C1-L95C31
                             self.H36M_TO_J17 = [6, 5, 4, 1, 2, 3, 16, 15, 14, 11, 12, 13, 8, 10, 0, 7, 9]
                             self.H36M_TO_J14 = self.H36M_TO_J17[:14]
-                        
+
                         # H36m joints
                         h36m = self.J_regressor_h36m @ v3d_ctx
                         h36m_hat = self.J_regressor_h36m @ v3d_hat_ctx
@@ -413,6 +413,10 @@ class Trainer(object):
                         # 14 joints only
                         h36m_ctx = h36m_ctx[self.H36M_TO_J14]
                         h36m_hat_ctx = h36m_hat_ctx[self.H36M_TO_J14]
+
+                        # 17 joints only
+                        # h36m_ctx = h36m_ctx[self.H36M_TO_J17]
+                        # h36m_hat_ctx = h36m_hat_ctx[self.H36M_TO_J17]
 
                         # MPJPE
                         mpjpe = ((torch.sqrt(((h36m_ctx - h36m_hat_ctx) ** 2).sum(-1))) * 1000).mean()

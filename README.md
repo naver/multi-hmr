@@ -103,8 +103,8 @@ Once downloaded you need to place them into `$HOME/models/multiHMR`.
 | [multiHMR_672_B](https://download.europe.naverlabs.com/ComputerVision/MultiHMR/multiHMR_672_B.pt)    | BEDLAM+AGORA+CUFFS+UBody                      | ViT-B    | 672x672    |     43      | 94.0  | 43.6 | 67.2 | longer training |
 | [multiHMR_672_S](https://download.europe.naverlabs.com/ComputerVision/MultiHMR/multiHMR_672_S.pt)    | BEDLAM+AGORA+CUFFS+UBody                      | ViT-S    | 672x672    |     29      | 102.4 | 49.3 | 78.9 | longer training |
 <!-- | [multiHMR_896_L_universal](https://download.europe.naverlabs.com/ComputerVision/MultiHMR/)    | BEDLAM+AGORA+CUFFS+UBody                      | ViT-L    | 896x896    |    126       | 88.2 | 39.4 | 57.9 | longer training | -->
-<!-- | [multiHMR_1288_L_bedlam](https://download.europe.naverlabs.com/ComputerVision/MultiHMR/)    | BEDLAM(train+val)                      | ViT-L    | 1288x1288    |    ?       | ? | ? | ckpt used for BEDLAM leaderboard | -->
-<!-- | [multiHMR_1288_L_agora](https://download.europe.naverlabs.com/ComputerVision/MultiHMR/)    | BEDLAM(train+val)+AGORA(train+val)                      | ViT-L    | 1288x1288    |    ?       | ? | ? | ckpt used for AGORA leaderboard | -->
+| [multiHMR_1288_L_bedlam](https://download.europe.naverlabs.com/ComputerVision/MultiHMR/multiHMR_1288_L_bedlam.pt)    | BEDLAM(train+val)                      | ViT-L    | 1288x1288    |    ?       | ? | ? | ckpt used for BEDLAM leaderboard |
+| [multiHMR_1288_L_agora](https://download.europe.naverlabs.com/ComputerVision/MultiHMR/multiHMR_1288_L_agora.pt)    | BEDLAM(train+val)+AGORA(train+val)                      | ViT-L    | 1288x1288    |    ?       | ? | ? | ckpt used for AGORA leaderboard |
 
 We compute the runtime on GPU V100-32GB.
 
@@ -229,6 +229,10 @@ CUDA_VISIBLE_DEVICES=0 python3.9 train.py \
 --pretrained models/multiHMR/multiHMR_896_L.pt
 ```
 Either check the log or open the tensorboard for checking the results.
+
+### CUFFS dataset
+The Close-Up Frames of Full-Body Subjects dataset, containing humans close to the camera with diverse hand poses is available [here](https://download.europe.naverlabs.com/ComputerVision/MultiHMR/CUFFS/)([LICENSE](https://download.europe.naverlabs.com/ComputerVision/MultiHMR/CUFFS/CUFFS_Dataset_LICENSE.txt)).
+More information about how to use it will be given soon, stay tuned.
 
 ## License
 The code is distributed under the CC BY-NC-SA 4.0 License.\
