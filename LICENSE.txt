@@ -1,0 +1,22 @@
+Multi-HMR, Copyright (C) 2025 NAVER Corporation. All Rights Reserved.
+ 
+You must agree to the terms of this license in order to install and use the “Materials” associated with this project, which may include source code, executable code, models, model checkpoints, and data, together with any documentation and any updates provided at Naver’s discretion. By exercising any rights to the Materials, you accept and agree to be bound by the terms of this license. If you are entering into this license on behalf of a company or other entity, you represent that you are the employee or agent of such company (or other entity) and you have the authority to enter into this license on behalf of such company (or other entity). The Materials are protected by copyright and other intellectual property laws and is licensed, not sold.
+
+Non-Commercial License
+
+Subject to any LICENSE EXCEPTIONS, NAVER Corporation (“NAVER”) hereby grants you a non-exclusive, non-sublicensable, non-transferable license to use the Materials, subject to the following conditions:
+
+(1) SCOPE OF USE: The Materials are used solely for non-commercial purposes (“Purpose”). You may not use the Materials or derivatives thereof for any commercial purpose (i.e., primarily intended for or directed towards commercial advantage or monetary compensation). You may not distribute the Materials or derivatives thereof under different terms and conditions as this License.
+
+(2) COPYRIGHT: The above copyright notice and this License along with the disclaimer below shall be retained in all copies and derivatives.
+
+(3) TERM: The License automatically terminates without notice if you fail to comply with its terms or the Purpose no longer exists. You may terminate this License at any time by ceasing to use the Materials. Upon termination you agree to delete any and all copies of the Materials and derivatives. The license to any of your Contributions under (4) will survive termination.
+
+(4) CONTRIBUTIONS: If you contribute to the project by providing feedback (“Contributions”) by, for example, making comments or a pull request, you agree to grant, and hereby grant, NAVER, without any restrictions or limitations, a non-exclusive, perpetual, irrevocable, royalty-free, paid-up, assignable and sub-licensable license, to reproduce, publicly perform or display, install, use, modify, adapt, prepare derivative works of, post, distribute, make and have made, sell and transfer your Contributions, and derivative works thereof, for any purpose. This grant by you does not change your rights to use your Contributions. Your Contributions may be used to update the Materials at Naver’s discretion.
+
+(5) NO IMPLIED LICENSE: Except as otherwise expressly stated in this License, nothing herein shall be construed to grant you any license, by implication, estoppel, or otherwise, to any intellectual property of NAVER, including trademarks, copyrights, patents, or trade secrets.
+
+(6) LIMITATION OF LIABILITY: THE MATERIALS ARE PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL NAVER BE LIABLE FOR ANY CLAIM, DAMAGES (INCLUDING, BUT NOT LIMITED TO LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT (INCLUDING NEGLIGENCE), STRICT LIABILITY OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE MATERIALS OR THE USE OR OTHER DEALINGS IN THE MATERIALS, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+LICENSE EXCEPTIONS: If the Materials include subcomponents or dependencies with separate copyright notices or license terms, they will be set forth in the file NOTICE.txt.
+

@@ -235,8 +235,7 @@ The Close-Up Frames of Full-Body Subjects dataset, containing humans close to th
 More information about how to use it will be given soon, stay tuned.
 
 ## License
-The code is distributed under the CC BY-NC-SA 4.0 License.\
-See [Multi-HMR LICENSE](Multi-HMR_License.txt), [Checkpoint LICENSE](Checkpoint_License.txt) and [Example Data LICENSE](Example_Data_License.txt) for more information.
+Code and checkpoints are provided under the terms of this [LICENSE](LICENSE.txt) and accompanying [NOTICE](NOTICE.txt).
 
 ## Citing
 If you find this code useful for your research, please consider citing the following paper:
