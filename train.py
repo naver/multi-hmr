@@ -3,8 +3,10 @@
 # CC BY-NC-SA 4.0 license
 
 import os
-os.environ["PYOPENGL_PLATFORM"] = "egl"
-os.environ['EGL_DEVICE_ID'] = '0'
+
+if sys.platform != 'win32':
+    os.environ["PYOPENGL_PLATFORM"] = "egl"
+    os.environ['EGL_DEVICE_ID'] = '0'
 
 from argparse import ArgumentParser
 import torch
