@@ -3,10 +3,12 @@
 # CC BY-NC-SA 4.0 license
 
 import os 
-os.environ["PYOPENGL_PLATFORM"] = "egl"
-os.environ['EGL_DEVICE_ID'] = '0'
-
 import sys
+if sys.platform != 'win32':
+    os.environ["PYOPENGL_PLATFORM"] = "egl"
+    os.environ['EGL_DEVICE_ID'] = '0'
+
+import urllib, shutil
 from argparse import ArgumentParser
 import random
 import pickle as pkl
@@ -73,7 +75,10 @@ def load_model(model_name, device=torch.device('cuda')):
         print("Downloading checkpoint from NAVER LABS Europe website...")
         
         try:
-            os.system(f"wget -O {ckpt_path} https://download.europe.naverlabs.com/ComputerVision/MultiHMR/{model_name}.pt")
+            url_ckpt = f"https://download.europe.naverlabs.com/ComputerVision/MultiHMR/{model_name}.pt"
+            print(f"Downloading checkpoint {model_name}.pt ...")
+            with urllib.request.urlopen(url_ckpt) as r, open(ckpt_path, "wb") as f:
+                shutil.copyfileobj(r, f)
             print(f"Ckpt downloaded to {ckpt_path}")
         except:
             print("Please contact fabien.baradel@naverlabs.com or open an issue on the github repo")
@@ -173,9 +178,14 @@ if __name__ == "__main__":
              
         # SMPL mean params download
         if not os.path.isfile(MEAN_PARAMS):
-            print('Start to download the SMPL mean params')
-            os.system(f"wget -O {MEAN_PARAMS}  https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmhuman3d/models/smpl_mean_params.npz?versionId=CAEQHhiBgICN6M3V6xciIDU1MzUzNjZjZGNiOTQ3OWJiZTJmNThiZmY4NmMxMTM4")
-            print('SMPL mean params have been succesfully downloaded')
+            url_params = (
+                "https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmhuman3d/models/"
+                "smpl_mean_params.npz?versionId=CAEQHhiBgICN6M3V6xciIDU1MzUzNjZjZGNiOTQ3OWJiZTJmNThiZmY4NmMxMTM4"
+            )
+            print('Downloading SMPL mean params...')
+            with urllib.request.urlopen(url_params) as r, open(MEAN_PARAMS, "wb") as f:
+                shutil.copyfileobj(r, f)
+            print('SMPL mean params have been successfully downloaded')
         else:
             print('SMPL mean params is already here')
 

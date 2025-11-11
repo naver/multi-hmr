@@ -13,6 +13,7 @@ Then open http://localhost:8000/
 """
 import spaces
 import os
+import sys
 os.environ["no_proxy"] = "localhost,127.0.0.1,::1"
 
 from utils.constants import SMPLX_DIR, MEAN_PARAMS
@@ -22,15 +23,20 @@ import gradio as gr
 from PIL import Image, ImageOps
 import numpy as np
 from pathlib import Path
+import zipfile
+import shutil
+import urllib.request
 
 if torch.cuda.is_available() and torch.cuda.device_count()>0:
     device = torch.device('cuda:0')
-    os.environ["PYOPENGL_PLATFORM"] = "egl"
+    if sys.platform != 'win32':
+        os.environ["PYOPENGL_PLATFORM"] = "egl"
     device_name = torch.cuda.get_device_name(0)
     print(f"Device - GPU: {device_name}")
 else:
     device = torch.device('cpu')
-    os.environ["PYOPENGL_PLATFORM"] = "osmesa"
+    if sys.platform != 'win32':
+        os.environ["PYOPENGL_PLATFORM"] = "osmesa"
     device_name = 'CPU'
     print("Device - CPU")
 
@@ -58,22 +64,34 @@ def download_smplx():
         fname = "models_smplx_v1_1.zip"
         username = os.environ['SMPLX_LOGIN'].replace('@','%40')
         password = os.environ['SMPLX_PWD']
-        cmd = f"wget -O {fname} --save-cookies cookies.txt --keep-session-cookies --post-data 'username={username}&password={password}' \"https://download.is.tue.mpg.de/download.php?domain=smplx&sfile={fname}\""
-        os.system(cmd)
-        assert os.path.isfile(fname), "failed to download"
-        os.system(f'unzip {fname}')
-        os.system(f"cp models/smplx/SMPLX_NEUTRAL.npz {smplx_fname}")
+        url = f"https://download.is.tue.mpg.de/download.php?domain=smplx&sfile={fname}"
+
+        data = f"username={username}&password={password}".encode("utf-8")
+        print(f'Downloading {fname} ...')
+        with urllib.request.urlopen(urllib.request.Request(url, data=data)) as r, open(fname, "wb") as out_f:
+            shutil.copyfileobj(r, out_f)
+        print('Extracting SMPL-X zip...')
+        with zipfile.ZipFile(fname, 'r') as zip_ref:
+            zip_ref.extractall(".")
+        src_path = os.path.join("models", "smplx", "SMPLX_NEUTRAL.npz")
+        shutil.copyfile(src_path, smplx_fname)
+
         assert os.path.isfile(smplx_fname), "failed to find smplx file"
-        print('SMPL-X has been succesfully downloaded')
+        print('SMPL-X has been successfully downloaded')
     else:
-         print('SMPL-X is already here')
+        print('SMPL-X is already here')
 
     if not os.path.isfile(MEAN_PARAMS):
         print('Start to download the SMPL mean params')
-        os.system(f"wget -O {MEAN_PARAMS}  https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmhuman3d/models/smpl_mean_params.npz?versionId=CAEQHhiBgICN6M3V6xciIDU1MzUzNjZjZGNiOTQ3OWJiZTJmNThiZmY4NmMxMTM4")
-        print('SMPL mean params have been succesfully downloaded')
+        url_params = (
+            "https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmhuman3d/models/"
+            "smpl_mean_params.npz?versionId=CAEQHhiBgICN6M3V6xciIDU1MzUzNjZjZGNiOTQ3OWJiZTJmNThiZmY4NmMxMTM4"
+        )
+        with urllib.request.urlopen(url_params) as r, open(MEAN_PARAMS, "wb") as out_f:
+            shutil.copyfileobj(r, out_f)
+        print('SMPL mean params have been successfully downloaded')
     else:
-         print('SMPL mean params is already here')
+        print('SMPL mean params is already here')
 
 @spaces.GPU
 def infer(fn, det_thresh, nms_kernel_size, fov):
