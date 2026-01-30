@@ -168,7 +168,8 @@ class Multi_HMR_v2(nn.Module):
         shape = torch.sigmoid(shape) # because between 0 and 1
         _shape = {}
         for l, k in enumerate(self.body_model.phenotype_labels):
-            _shape[k] = shape[:,l]
+            if k in ['age', 'gender', 'weight', 'height', 'muscle', 'proportions']:
+                _shape[k] = shape[:,l]
 
         # rotmat to homogenous matrix
         rotmat_homo = rotation_to_homogeneous(rotmat)
@@ -232,6 +233,9 @@ class Multi_HMR_v2(nn.Module):
                     }
 
                 persons.append(person)
+
+            # Re-order persons so that the closest to the camera is first (smallest z in 'transl')
+            persons = sorted(persons, key=lambda p: p['transl'][2].item())
 
             glob_output = {
                 'K': K,

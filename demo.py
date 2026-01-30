@@ -22,12 +22,20 @@ torch.cuda.empty_cache()
 np.random.seed(seed=0)
 random.seed(0)
 import ipdb
+import glob
 
 def open_image(img_path, img_size, device=torch.device('cuda')):
     """ Open image at path, resize and pad """
 
     # Open and reshape
     img_pil = Image.open(img_path).convert('RGB')
+    aspect_ratio = img_pil.width / img_pil.height
+    
+    # keep the original image with padding for visualisation
+    img_pil_full = img_pil.copy()
+    # img_pil_full = ImageOps.pad(img_pil_full.copy(), size=(max(img_pil_full.size),max(img_pil_full.size)), color=(255, 255, 255))
+
+    # Resize while keeping aspect ratio
     img_pil = ImageOps.contain(img_pil, (img_size,img_size)) # keep the same aspect ratio
 
     # Keep a copy for visualisations.
@@ -40,7 +48,7 @@ def open_image(img_path, img_size, device=torch.device('cuda')):
     # Normalize and go to torch.
     resize_img = normalize_rgb(resize_img)
     x = torch.from_numpy(resize_img).unsqueeze(0).to(device)
-    return x, img_pil_bis
+    return x, img_pil_full
 
 def get_camera_parameters(img_size, fov=60, p_x=None, p_y=None, device=torch.device('cuda')):
     """ Given image size, fov and principal point coordinates, return K the camera parameter matrix"""
@@ -117,10 +125,11 @@ def forward_model(model, input_image, camera_parameters,
 
     return humans
 
-def overlay_human_meshes(humans, faces, K, model, img_pil, unique_color=False):
+def overlay_human_meshes(humans, faces, K, model, img_pil, unique_color=False, alpha=0.8, _color=None):
 
     # Color of humans seen in the image.
-    _color = [color[0] for _ in range(len(humans))] if unique_color else color
+    if _color is None:
+        _color = [color[0] for _ in range(len(humans))] if unique_color else color
     
     # Get focal and princpt for rendering.
     focal = np.asarray([K[0,0,0].cpu().numpy(),K[0,1,1].cpu().numpy()])
@@ -139,7 +148,7 @@ def overlay_human_meshes(humans, faces, K, model, img_pil, unique_color=False):
                     verts_list,
                     faces_list,
                     {'focal': focal, 'princpt': princpt},
-                    alpha=0.8,
+                    alpha=alpha,
                     color=_color)
         except Exception as e:
             print("Rendering error:", e)
@@ -148,6 +157,84 @@ def overlay_human_meshes(humans, faces, K, model, img_pil, unique_color=False):
 
     return pred_rend_array, _color
 
+def _generate_rotated_frames(humans, faces, K, model, img, center, name, n_frames, angle_range, axis, unique_color, alpha, _color):
+    frames = []
+    for i in range(n_frames):
+        angle = angle_range * i / (n_frames - 1)
+        theta = np.deg2rad(angle)
+        if axis == 'y':
+            rotmat = np.array([
+                [np.cos(theta), 0, np.sin(theta)],
+                [0, 1, 0],
+                [-np.sin(theta), 0, np.cos(theta)]
+            ])
+        elif axis == 'x':
+            rotmat = np.array([
+                [1, 0, 0],
+                [0, np.cos(theta), -np.sin(theta)],
+                [0, np.sin(theta), np.cos(theta)]
+            ])
+        else:
+            raise ValueError("Axis must be 'x' or 'y'")
+        _humans = []
+        for k in range(len(humans)):
+            x = (humans[k][name].cpu().numpy() - center) @ rotmat.T + center
+            _human_k = {name: torch.tensor(x)}
+            _humans.append(_human_k)
+        frame, _ = overlay_human_meshes(_humans, faces, K, model, img, unique_color=unique_color, alpha=alpha, _color=_color)
+        frames.append(frame.astype(np.uint8))
+    return frames
+
+def create_rotating_video(humans, faces, K, model, img_pil_visu, unique_color=False, alpha=0.8, fn='rotating.mp4', n_frames=20, angle_range=60):
+    if len(humans) == 0:
+        return None
+
+    print("Generating rotating video...")
+
+    central, _color = overlay_human_meshes(humans, faces, K, model, img_pil_visu, unique_color=unique_color, alpha=alpha, _color=None)
+    white_img = Image.new(img_pil_visu.mode, img_pil_visu.size, (255, 255, 255))
+    closest_idx = 0
+    name = 'verts_smplx' if 'verts_smplx' in humans[0] else 'v3d'
+    center = humans[closest_idx][name].mean(0).cpu().numpy()
+
+    frames_central_to_right = _generate_rotated_frames(humans, faces, K, model, white_img, center, name, n_frames, angle_range, 'y', unique_color, alpha, _color)
+    frames_right_to_central = frames_central_to_right[::-1][1:-1]
+    frames_central_to_left = _generate_rotated_frames(humans, faces, K, model, white_img, center, name, n_frames, -angle_range, 'y', unique_color, alpha, _color)
+    frames_left_to_central = frames_central_to_left[::-1][1:-1]
+    frames_central_to_top = _generate_rotated_frames(humans, faces, K, model, white_img, center, name, n_frames, angle_range, 'x', unique_color, alpha, _color)
+    frames_top_to_central = frames_central_to_top[::-1][1:-1]
+
+    frames = [central.astype(np.uint8) for _ in range(n_frames//4)] + \
+            frames_central_to_right + \
+            frames_right_to_central + \
+            [central.astype(np.uint8) for _ in range(n_frames//4)] + \
+            frames_central_to_left + \
+            frames_left_to_central + \
+            [central.astype(np.uint8) for _ in range(n_frames//4)] + \
+            frames_central_to_top + \
+            frames_top_to_central + \
+            [central.astype(np.uint8) for _ in range(n_frames//4)]
+
+    # Create a video from frames
+    import cv2
+    height, width, layers = frames[0].shape
+    fps = 10
+    video_path = fn
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    video = cv2.VideoWriter(str(video_path), fourcc, fps, (width, height))
+
+    for frame in tqdm(frames, desc=f"Writing video"):
+        img = frame[:, :, ::-1]  # Convert RGB to BGR
+        if img.shape[:2] != (height, width):
+            img = cv2.resize(img, (width, height))
+        video.write(img)
+
+    video.release()
+    print(f"Saved video to {video_path}")
+
+    return fn
+
+
 if __name__ == "__main__":
         parser = ArgumentParser()
         parser.add_argument("--model_name", type=str, default='multiHMR_896_L_synth')
@@ -155,11 +242,13 @@ if __name__ == "__main__":
         parser.add_argument("--out_folder", type=str, default='demo_out')
         parser.add_argument("--save_mesh", type=int, default=0, choices=[0,1])
         parser.add_argument("--extra_views", type=int, default=0, choices=[0,1])
+        parser.add_argument("--save_rotating_video", type=int, default=0, choices=[0,1])        
         parser.add_argument("--det_thresh", type=float, default=0.3)
         parser.add_argument("--nms_kernel_size", type=float, default=3)
         parser.add_argument("--fov", type=float, default=60)
         parser.add_argument("--distance", type=int, default=0, choices=[0,1], help='add distance on the reprojected mesh')
         parser.add_argument("--unique_color", type=int, default=0, choices=[0,1], help='only one color for all humans')
+        parser.add_argument("--alpha", type=float, default=1.0, help='alpha blending value for rendering')
         
         args = parser.parse_args()
 
@@ -192,7 +281,19 @@ if __name__ == "__main__":
 
         # Input images
         suffixes = ('.jpg', '.jpeg', '.png', '.webp')
-        l_img_path = [file for file in os.listdir(args.img_folder) if file.endswith(suffixes) and file[0] != '.']
+        if os.path.isfile(args.img_folder) and args.img_folder.lower().endswith(suffixes):
+            l_img_path = [os.path.basename(args.img_folder)]
+            args.img_folder = os.path.dirname(args.img_folder)
+        else:
+            l_img_path = []
+            img_root = os.path.abspath(args.img_folder)
+            for root, _, files in os.walk(img_root):
+                for fname in files:
+                    if fname.lower().endswith(suffixes) and not fname.startswith('.'):
+                        abs_path = os.path.join(root, fname)
+                        rel_path = os.path.relpath(abs_path, img_root)
+                        l_img_path.append(rel_path)
+            l_img_path.sort()
 
         # Loading
         model = load_model(args.model_name)
@@ -209,13 +310,14 @@ if __name__ == "__main__":
         os.makedirs(args.out_folder, exist_ok=True)
         l_duration = []
         for i, img_path in enumerate(tqdm(l_img_path)):
-                
-            # Path where the image + overlays of human meshes + optional views will be saved.
-            save_fn = os.path.join(args.out_folder, f"{Path(img_path).stem}_{model_name}.png")
+            # Compose save_fn: out_folder/rel_path_no_ext_modelname.png
+            save_fn = os.path.join(args.out_folder, f"{img_path}_{model_name}.png")
+            # Ensure output subdirectories exist
+            os.makedirs(os.path.dirname(save_fn), exist_ok=True)
 
             # Get input in the right format for the model
             img_size = model.img_size
-            x, img_pil_nopad = open_image(os.path.join(args.img_folder, img_path), img_size)
+            x, img_pil_visu = open_image(os.path.join(args.img_folder, img_path), img_size)
 
             # Get camera parameters
             p_x, p_y = None, None
@@ -228,45 +330,38 @@ if __name__ == "__main__":
                                              nms_kernel_size=args.nms_kernel_size)
             duration = time.time() - start
             l_duration.append(duration)
-    
-            # Superimpose predicted human meshes to the input image.
-            img_array = np.asarray(img_pil_nopad)
-            img_pil_visu= Image.fromarray(img_array)
-            pred_rend_array, _color = overlay_human_meshes(humans, faces, K, model, img_pil_visu, unique_color=args.unique_color)
+
+            # Update K for rendering at full resolution
+            ratio = max(img_pil_visu.size) / x.shape[-1]
+            K[0, 0, 2] = img_pil_visu.size[0] / 2.0
+            K[0, 1, 2] = img_pil_visu.size[1] / 2.0
+            K[0, [0, 1], [0, 1]] = ratio * K[0, [0, 1], [0, 1]]
+             
+            pred_rend_array, _color = overlay_human_meshes(humans, faces, K, model, img_pil_visu, unique_color=args.unique_color, alpha=args.alpha)
 
             # Optionally add distance as an annotation to each mesh
             if args.distance:
                 pred_rend_array = print_distance_on_image(pred_rend_array, humans, _color)
 
             # List of images too view side by side.
-            l_img = [img_array, pred_rend_array]
-
-            # More views
-            if args.extra_views:
-                # Render more side views of the meshes.
-                pred_rend_array_bis, pred_rend_array_sideview, pred_rend_array_bev = render_side_views(img_array, _color, humans, model, K, faces=faces)
-
-                # Concat
-                _img1 = np.concatenate([img_array, pred_rend_array],1).astype(np.uint8)
-                _img2 = np.concatenate([pred_rend_array_bis, pred_rend_array_sideview, pred_rend_array_bev],1).astype(np.uint8)
-                _h = int(_img2.shape[0] * (_img1.shape[1]/_img2.shape[1]))
-                _img2 = np.asarray(Image.fromarray(_img2).resize((_img1.shape[1], _h)))
-                _img = np.concatenate([_img1, _img2],0).astype(np.uint8)
-            else:
-                 # Concatenate side by side
-                _img = np.concatenate([img_array, pred_rend_array],1).astype(np.uint8)
+            l_img = [np.asarray(img_pil_visu), pred_rend_array]
+            _img = np.concatenate(l_img, 1).astype(np.uint8)
 
             # Save to path.
             Image.fromarray(_img).save(save_fn)
-            print(f"Avg Multi-HMR inference time={int(1000*np.median(np.asarray(l_duration[-1:])))}ms on a {torch.cuda.get_device_name()}")
+            print(f"Avg Multi-HMR inference time={int(1000*np.median(np.asarray(l_duration[-1:])))}ms on a {torch.cuda.get_device_name()} ---> {save_fn}")
+            sys.stdout.flush()
 
-            # # GIF
-            # if 0:
-            #     pred_images = render_gif(img_array, _color, humans, model, K)
-            #     ipdb.set_trace()
+
+            # video
+            if args.save_rotating_video:
+                create_rotating_video(humans, faces, K, model, img_pil_visu, unique_color=args.unique_color, alpha=args.alpha, fn=save_fn.replace('.png','_rotating.mp4'), n_frames=20, angle_range=60)
+
+
 
             # Saving mesh
             if args.save_mesh:
+                # deprecated: only for backward compatibility
                 # npy file
                 l_mesh = [hum['verts_smplx'].cpu().numpy() for hum in humans]
                 mesh_fn = save_fn+'.npy'

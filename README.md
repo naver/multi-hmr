@@ -86,9 +86,10 @@ The following command will run Multi-HMR on all images in the specified `--img_f
 The `--model_name` flag specifies the model to use.
 The `--extra_views` flags additionally renders the side and bev view of the reconstructed scene, `--save_mesh` saves meshes as in a '.npy' file.
 ```bash
-ANNY_CACHE_DIR=.anny_cache CUDA_VISIBLE_DEVICES=1 python3.9 demo.py \
+ANNY_CACHE_DIR=.anny_cache CUDA_VISIBLE_DEVICES=0 python3.9 demo.py \
     --img_folder example_data \
     --out_folder demo_out \
+    --save_rotating_video 1 \
     --model_name multiHMR_672_L_anny
 ```
 
@@ -239,6 +240,7 @@ More information about how to use it will be given soon, stay tuned.
 
 ## License
 Code and checkpoints are provided under the terms of this [LICENSE](LICENSE.txt) and accompanying [NOTICE](NOTICE.txt).
+The licence for the Multi-HMR checkpoint with the Anny body model is here: [LICENSE](https://download.europe.naverlabs.com/ComputerVision/MultiHMR/Checkpoint_License_Anny.txt)
 
 ## Citing
 If you find this code useful for your research, please consider citing the following paper:
