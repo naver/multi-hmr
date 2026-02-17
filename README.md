@@ -24,18 +24,7 @@
   <a href="https://arxiv.org/abs/2402.14654"><img alt="arXiv" src="https://img.shields.io/badge/arXiv-2402.14654-00ff00.svg"></a>
   <a href="https://europe.naverlabs.com/?p=9361171&preview=true"><img alt="Blogpost" src="https://img.shields.io/badge/Blogpost-up-yellow"></a>
   <a href="https://huggingface.co/spaces/naver/multi-hmr"><img src='https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Space-blue'></a>
-<!--   <a href="https://multihmr-demo.europe.naverlabs.com/"><img alt="Demo" src="https://img.shields.io/badge/Demo-up-blue"></a> -->
-  <!-- <a href="./"><img alt="Hugging Face Spaces" src="https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Spaces-blue"></a> -->
   </p>
-
-  <!-- <p align="left">
-  <a href="https://paperswithcode.com/sota/human-mesh-recovery-on-bedlam?p=multi-hmr-multi-person-whole-body-human-mesh"><img src="https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/multi-hmr-multi-person-whole-body-human-mesh/human-mesh-recovery-on-bedlam"></a><br>
-  <a href="https://paperswithcode.com/sota/3d-human-reconstruction-on-ehf?p=multi-hmr-multi-person-whole-body-human-mesh"><img src="https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/multi-hmr-multi-person-whole-body-human-mesh/3d-human-reconstruction-on-ehf"></a><br>
-  <a href="https://paperswithcode.com/sota/3d-human-pose-estimation-on-ubody?p=multi-hmr-multi-person-whole-body-human-mesh"><img src="https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/multi-hmr-multi-person-whole-body-human-mesh/3d-human-pose-estimation-on-ubody"></a><br>
-  <a href="https://paperswithcode.com/sota/3d-multi-person-mesh-recovery-on-agora?p=multi-hmr-multi-person-whole-body-human-mesh"><img src="https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/multi-hmr-multi-person-whole-body-human-mesh/3d-multi-person-mesh-recovery-on-agora"></a><br>
-  <a href="https://paperswithcode.com/sota/3d-multi-person-human-pose-estimation-on?p=multi-hmr-multi-person-whole-body-human-mesh"><img src="https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/multi-hmr-multi-person-whole-body-human-mesh/3d-multi-person-human-pose-estimation-on"></a><br>
-  <a href="https://paperswithcode.com/sota/3d-human-pose-estimation-on-3dpw?p=multi-hmr-multi-person-whole-body-human-mesh"><img src="https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/multi-hmr-multi-person-whole-body-human-mesh/3d-human-pose-estimation-on-3dpw"></a><br>
-  </p> -->
 
   <div align="center">
   <img width="49%" alt="Multi-HMR illustration 1" src="assets/visu1.gif">
@@ -49,7 +38,7 @@
 </p>
 
 ## News
-- 2026/01/25: Release of ckpt with [Anny body model](https://github.com/naver/anny).
+- 2026/01/25: Release of checkpoint with [Anny](https://github.com/naver/anny) body model.
 - 2024/07/03: Release of training-evaluation code.
 - 2024/07/01: Multi-HMR is accepted to ECCV'24.
 - 2024/06/17: Multi-HMR won [Robin Challenge @CVPR'24](https://rhobin-challenge.github.io/): 3D human reconstruction track.
@@ -76,24 +65,17 @@ The installation has been tested with python3.9 and CUDA 12.1.
 
 Checkpoints will automatically be downloaded to `$HOME/models/multiHMR` the first time you run the demo code.
 
-Besides these files, you also need to download the *SMPLX* model.
-You will need the [neutral model](http://smplify.is.tue.mpg.de) for running the demo code.
-Please go to the corresponding website and register to get access to the downloads section.
-Download the model and place `SMPLX_NEUTRAL.npz` in `./models/smplx/`.
-
 ## Run Multi-HMR on images
 The following command will run Multi-HMR on all images in the specified `--img_folder`, and save renderings of the reconstructions in `--out_folder`.
 The `--model_name` flag specifies the model to use.
 The `--extra_views` flags additionally renders the side and bev view of the reconstructed scene, `--save_mesh` saves meshes as in a '.npy' file.
 ```bash
-ANNY_CACHE_DIR=.anny_cache CUDA_VISIBLE_DEVICES=0 python3.9 demo.py \
+python3.9 demo.py \
     --img_folder example_data \
     --out_folder demo_out \
     --save_rotating_video 1 \
     --model_name multiHMR_672_L_anny
 ```
-
-/beegfs/scratch/user/fbaradel/data/anny/visu/pexels/
 
 ## Pre-trained models
 We provide multiple pre-trained checkpoints.
@@ -111,6 +93,15 @@ Once downloaded you need to place them into `$HOME/models/multiHMR`.
 | [multiHMR_1288_L_agora](https://download.europe.naverlabs.com/ComputerVision/MultiHMR/multiHMR_1288_L_agora.pt)     | BEDLAM(train+val)+AGORA(train+val)                      | ViT-L    | 1288x1288    |    ?       | ? | ? | ckpt used for AGORA leaderboard |
 
 We compute the runtime on GPU V100-32GB.
+
+<details>
+<summary><b>Download SMPL-X model (optional)</b></summary>
+<br>
+Besides these files, you also need to download the *SMPLX* model.
+You will need the [neutral model](http://smplify.is.tue.mpg.de) for running the demo code.
+Please go to the corresponding website and register to get access to the downloads section.
+Download the model and place `SMPLX_NEUTRAL.npz` in `./models/smplx/`.
+</details>
 
 ## Training Multi-HMR
 We provide code for training Multi-HMR using a single GPU on BEDLAM-training and evaluating it on BEDLAM-validation, EHF and 3DPW-test.

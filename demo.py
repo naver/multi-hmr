@@ -14,7 +14,7 @@ import time
 
 from utils import normalize_rgb, render_meshes, get_focalLength_from_fieldOfView, demo_color as color, print_distance_on_image, render_side_views, create_scene, MEAN_PARAMS, CACHE_DIR_MULTIHMR, SMPLX_DIR
 from model import Model
-from multi_hmr_v2.multi_hmr import Multi_HMR_v2 as ModelAnny
+from multi_hmr_anny.multi_hmr import Multi_HMR as ModelAnny
 from pathlib import Path
 
 torch.cuda.empty_cache()

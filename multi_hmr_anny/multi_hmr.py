@@ -10,13 +10,13 @@ from utils import unpatch, inverse_perspective_projection, perspective_projectio
 import torch.nn.functional as F
 import anny
 
-from multi_hmr_v2.hph import HPH
-from multi_hmr_v2.pos_embed import get_2d_sincos_pos_embed
-from multi_hmr_v2.encoder import Encoder
+from multi_hmr_anny.hph import HPH
+from multi_hmr_anny.pos_embed import get_2d_sincos_pos_embed
+from multi_hmr_anny.encoder import Encoder
 
 from utils import rotation_to_homogeneous
 
-class Multi_HMR_v2(nn.Module):
+class Multi_HMR(nn.Module):
     """ A ViT backbone followed by a "HPH" head (stack of cross attention layers with queries corresponding to detected humans.) """
 
     def __init__(self,
