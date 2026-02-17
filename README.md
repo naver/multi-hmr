@@ -38,7 +38,7 @@
 </p>
 
 ## News
-- 2026/01/25: Release of checkpoint with [Anny](https://github.com/naver/anny) body model.
+- 2026/02/17: Release of checkpoint with [Anny](https://github.com/naver/anny) body model.
 - 2024/07/03: Release of training-evaluation code.
 - 2024/07/01: Multi-HMR is accepted to ECCV'24.
 - 2024/06/17: Multi-HMR won [Robin Challenge @CVPR'24](https://rhobin-challenge.github.io/): 3D human reconstruction track.
