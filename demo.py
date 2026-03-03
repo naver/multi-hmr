@@ -189,8 +189,6 @@ def create_rotating_video(humans, faces, K, model, img_pil_visu, unique_color=Fa
     if len(humans) == 0:
         return None
 
-    print("Generating rotating video...")
-
     central, _color = overlay_human_meshes(humans, faces, K, model, img_pil_visu, unique_color=unique_color, alpha=alpha, _color=None)
     white_img = Image.new(img_pil_visu.mode, img_pil_visu.size, (255, 255, 255))
     closest_idx = 0
@@ -204,6 +202,13 @@ def create_rotating_video(humans, faces, K, model, img_pil_visu, unique_color=Fa
     frames_central_to_top = _generate_rotated_frames(humans, faces, K, model, white_img, center, name, n_frames, angle_range, 'x', unique_color, alpha, _color)
     frames_top_to_central = frames_central_to_top[::-1][1:-1]
 
+    print(len(frames_central_to_right))
+    print(len(frames_right_to_central))
+    print(len(frames_central_to_left))
+    print(len(frames_left_to_central))
+    print(len(frames_central_to_top))
+    print(len(frames_top_to_central))
+
     frames = [central.astype(np.uint8) for _ in range(n_frames//4)] + \
             frames_central_to_right + \
             frames_right_to_central + \
@@ -216,23 +221,24 @@ def create_rotating_video(humans, faces, K, model, img_pil_visu, unique_color=Fa
             [central.astype(np.uint8) for _ in range(n_frames//4)]
 
     # Create a video from frames
-    import cv2
-    height, width, layers = frames[0].shape
-    fps = 10
-    video_path = fn
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    video = cv2.VideoWriter(str(video_path), fourcc, fps, (width, height))
+    if fn is not None:
+        import cv2
+        height, width, layers = frames[0].shape
+        fps = 10
+        video_path = fn
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        video = cv2.VideoWriter(str(video_path), fourcc, fps, (width, height))
 
-    for frame in tqdm(frames, desc=f"Writing video"):
-        img = frame[:, :, ::-1]  # Convert RGB to BGR
-        if img.shape[:2] != (height, width):
-            img = cv2.resize(img, (width, height))
-        video.write(img)
+        for frame in tqdm(frames, desc=f"Writing video"):
+            img = frame[:, :, ::-1]  # Convert RGB to BGR
+            if img.shape[:2] != (height, width):
+                img = cv2.resize(img, (width, height))
+            video.write(img)
 
-    video.release()
-    print(f"Saved video to {video_path}")
+        video.release()
+        print(f"Saved video to {video_path}")
 
-    return fn
+    return frames
 
 
 if __name__ == "__main__":
@@ -345,19 +351,21 @@ if __name__ == "__main__":
 
             # List of images too view side by side.
             l_img = [np.asarray(img_pil_visu), pred_rend_array]
-            _img = np.concatenate(l_img, 1).astype(np.uint8)
+
+            # sideview - 45 degress
+            if args.extra_views:
+                frames = create_rotating_video(humans, faces, K, model, img_pil_visu, unique_color=args.unique_color, alpha=args.alpha, fn=None, n_frames=2, angle_range=30)
+                l_img.extend([frames[1]])
 
             # Save to path.
+            _img = np.concatenate(l_img, 1).astype(np.uint8)
             Image.fromarray(_img).save(save_fn)
             print(f"Avg Multi-HMR inference time={int(1000*np.median(np.asarray(l_duration[-1:])))}ms on a {torch.cuda.get_device_name()} ---> {save_fn}")
             sys.stdout.flush()
 
-
             # video
             if args.save_rotating_video:
                 create_rotating_video(humans, faces, K, model, img_pil_visu, unique_color=args.unique_color, alpha=args.alpha, fn=save_fn.replace('.png','_rotating.mp4'), n_frames=20, angle_range=60)
-
-
 
             # Saving mesh
             if args.save_mesh:
