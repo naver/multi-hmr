@@ -64,14 +64,14 @@ def download_smplx():
         os.system(f'unzip {fname}')
         os.system(f"cp models/smplx/SMPLX_NEUTRAL.npz {smplx_fname}")
         assert os.path.isfile(smplx_fname), "failed to find smplx file"
-        print('SMPL-X has been succesfully downloaded')
+        print('SMPL-X has been successfully downloaded')
     else:
          print('SMPL-X is already here')
 
     if not os.path.isfile(MEAN_PARAMS):
         print('Start to download the SMPL mean params')
         os.system(f"wget -O {MEAN_PARAMS}  https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmhuman3d/models/smpl_mean_params.npz?versionId=CAEQHhiBgICN6M3V6xciIDU1MzUzNjZjZGNiOTQ3OWJiZTJmNThiZmY4NmMxMTM4")
-        print('SMPL mean params have been succesfully downloaded')
+        print('SMPL mean params have been successfully downloaded')
     else:
          print('SMPL mean params is already here')
 
